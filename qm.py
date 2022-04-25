@@ -91,7 +91,7 @@ K-way marginal query manager
 class KWayMarginalQM(BaseKWayMarginalQM):
     def get_answers(self, data, weights=None, by_workload=False, density=True):
         ans_vec = []
-        for proj in self.workloads:
+        for proj in tqdm(self.workloads):
             x = data.project(proj).datavector(weights=weights, density=density)
             ans_vec.append(x)
 
