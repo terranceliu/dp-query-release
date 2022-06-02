@@ -21,7 +21,7 @@ if __name__ == "__main__":
     df_processed, domain = discretize_columns(df, cols_categorical, cols_continuous, cont_options=options, cont_params=params)
 
     csv_path = "datasets/bank.csv"
-    domain_path = "datasets/bank-domain.json"
+    domain_path = "datasets/domain/bank-domain.json"
 
     # save
     df_processed.to_csv(csv_path, index=False)
