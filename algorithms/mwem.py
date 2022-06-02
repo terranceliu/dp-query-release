@@ -135,7 +135,7 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     # data args
-    parser.add_argument('--dataset', type=str, default='adult-small')
+    parser.add_argument('--dataset', type=str, default='adult-reduced')
     parser.add_argument('--marginal', type=int, default=3)
     parser.add_argument('--workload', type=int, default=32)
     parser.add_argument('--workload_seed', type=int, default=0)
