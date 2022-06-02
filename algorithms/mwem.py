@@ -1,3 +1,4 @@
+import time
 import argparse
 import itertools
 import numpy as np
@@ -5,7 +6,7 @@ import pandas as pd
 
 from tqdm import tqdm
 from qm import KWayMarginalSupportQM
-from algo import IterativeAlgorithm
+from algorithms.algo import IterativeAlgorithm
 from utils.mechanisms import exponential_mech, gaussian_mech
 
 class MWEM(IterativeAlgorithm):
@@ -34,7 +35,7 @@ class MWEM(IterativeAlgorithm):
         self.recycle_queries = recycle_queries
 
         self.data_support = self.qm.data_support
-        self.A_init = self._initialize_A()
+        self.A_init = None
         self.A_avg = None
         self.A_last = None
 
@@ -66,15 +67,15 @@ class MWEM(IterativeAlgorithm):
         true_answers (np.array): numpy array of answers the algorithm is fitting to
     """
     def fit(self, true_answers):
+        self.A_init = self._initialize_A()
         A = np.copy(self.A_init)
         A_avg = np.zeros(self.A_init.shape)
 
         self.measurements_dict = {}
 
+        fake_answers = self.qm.get_answers(A)
+        scores = np.abs(true_answers - fake_answers)
         for t in tqdm(range(self.T)):
-            fake_answers = self.qm._get_sampled_query_answers(A)
-            scores = np.abs(true_answers - fake_answers)
-
             # SAMPLE
             q_t_ind = self._sample(scores)
 
@@ -110,6 +111,12 @@ class MWEM(IterativeAlgorithm):
 
             A_avg += A
 
+            fake_answers = self.qm.get_answers(A)
+            scores = np.abs(true_answers - fake_answers)
+            if self.verbose:
+                print("Max Error: {:.4f}".format(scores.max()))
+                time.sleep(.05) # otherwise prints too quickly for tqdm
+
         A_last = np.copy(A)
         A_avg /= self.T
 
@@ -124,14 +131,13 @@ class MWEM(IterativeAlgorithm):
             return self.A_avg
         return self.A_last
 
-
 def get_args():
     parser = argparse.ArgumentParser()
 
     # data args
-    parser.add_argument('--dataset', type=str, help='queries', default='adult-small')
-    parser.add_argument('--marginal', type=int, help='queries', default=3)
-    parser.add_argument('--workload', type=int, help='queries', default=32)
+    parser.add_argument('--dataset', type=str, default='adult-small')
+    parser.add_argument('--marginal', type=int, default=3)
+    parser.add_argument('--workload', type=int, default=32)
     parser.add_argument('--workload_seed', type=int, default=0)
     # privacy args
     parser.add_argument('--epsilon', type=float, help='Privacy parameter', default=1.0)

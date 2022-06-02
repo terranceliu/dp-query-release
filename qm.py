@@ -1,4 +1,5 @@
 import os
+import copy
 import math
 import itertools
 import numpy as np
@@ -250,3 +251,14 @@ class KWayMarginalSupportQM(KWayMarginalQM):
         if not by_workload:
             return np.concatenate(ans_vec)
         return ans_vec
+
+class KWayMarginalSupportQMPublic(KWayMarginalSupportQM):
+    def __init__(self, data, workloads, sensitivity=None,
+                 cache_dir=None, overwrite_cache=True):
+        super().__init__(data, workloads, sensitivity=sensitivity,
+                     cache_dir=cache_dir, overwrite_cache=overwrite_cache)
+
+    def get_support(self, data):
+        data = copy.deepcopy(data)
+        data.df = data.df.drop_duplicates()
+        return data

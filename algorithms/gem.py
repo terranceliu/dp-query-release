@@ -6,9 +6,9 @@ from tqdm import tqdm
 from torch import optim
 
 from qm import KWayMarginalQM
-from algo import IterativeAlgorithmTorch
+from algorithms.algo import IterativeAlgorithmTorch
 from utils.mechanisms import exponential_mech, gaussian_mech
-from generative import GenerativeNetwork
+from algorithms.base.generative import GenerativeNetwork
 
 class BaseGEM(IterativeAlgorithmTorch):
     def __init__(self, qm, T, eps0,
@@ -217,9 +217,9 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     # data args
-    parser.add_argument('--dataset', type=str, help='queries', default='adult')
-    parser.add_argument('--marginal', type=int, help='queries', default=3)
-    parser.add_argument('--workload', type=int, help='queries', default=32)
+    parser.add_argument('--dataset', type=str, default='adult')
+    parser.add_argument('--marginal', type=int, default=3)
+    parser.add_argument('--workload', type=int, default=32)
     parser.add_argument('--workload_seed', type=int, default=0)
     # privacy args
     parser.add_argument('--epsilon', type=float, help='Privacy parameter', default=1.0)

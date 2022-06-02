@@ -81,7 +81,7 @@ def get_data(name, root_path='./datasets/', cols=None):
     df_path = os.path.join(root_path, "{}.csv".format(name))
     df = pd.read_csv(df_path)
 
-    domain_path = os.path.join(root_path, "{}-domain.json".format(name))
+    domain_path = os.path.join(root_path, "domain/{}-domain.json".format(name))
     config = json.load(open(domain_path))
     domain = Domain(config.keys(), config.values())
 

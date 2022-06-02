@@ -1,4 +1,4 @@
-from mwem import MWEM, get_args
+from algorithms.mwem import MWEM, get_args
 from qm import KWayMarginalSupportQM
 from utils.utils_data import get_data, get_rand_workloads
 from utils.utils_general import get_errors, get_per_round_budget_zCDP

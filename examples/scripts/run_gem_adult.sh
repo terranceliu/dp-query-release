@@ -18,6 +18,8 @@ MAX_ITERS=100
 ALPHA=0.5
 EMA_WEIGHTS_BETA=0.5
 
+export PYTHONPATH="${PYTHONPATH}:${PWD}$"
+
 python examples/run_gem.py --dataset $DATASET \
 --marginal $MARGINAL --workload $WORKLOAD --workload_seed $WORKLOAD_SEED \
 --syndata $SYNDATA_SIZE --dim $DIM \

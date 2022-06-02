@@ -20,7 +20,7 @@ We also provide a preprocessed version of the ADULT dataset.
 
 The examples directory provides examples of how to use this repository (more documentation to come). We provide the following script that provides an example of set of arguments that can be used to run GEM on the ADULT dataset.
 ````
-/examples/scripts/run_gem_adult.sh
+./examples/scripts/run_gem_adult.sh
 ````
 
 # Acknowledgements
