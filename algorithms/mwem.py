@@ -75,7 +75,11 @@ class MWEM(IterativeAlgorithm):
 
         fake_answers = self.qm.get_answers(A)
         scores = np.abs(true_answers - fake_answers)
-        for t in tqdm(range(self.T)):
+        pbar = tqdm(range(self.T))
+        for t in pbar:
+            if self.verbose:
+                pbar.set_description("Max Error: {:.4f}".format(scores.max()))
+
             # SAMPLE
             q_t_ind = self._sample(scores)
 
@@ -113,9 +117,6 @@ class MWEM(IterativeAlgorithm):
 
             fake_answers = self.qm.get_answers(A)
             scores = np.abs(true_answers - fake_answers)
-            if self.verbose:
-                print("Max Error: {:.4f}".format(scores.max()))
-                time.sleep(.05) # otherwise prints too quickly for tqdm
 
         A_last = np.copy(A)
         A_avg /= self.T
