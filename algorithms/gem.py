@@ -66,11 +66,16 @@ class BaseGEM(IterativeAlgorithmTorch):
         past_fake_answers = fake_query_attr.prod(-1).mean(axis=0)
         return past_fake_answers
 
-    def _get_sampled_query_errors(self, fake_data):
-        past_fake_answers = self._get_sampled_query_answers(fake_data)
-        errors = past_fake_answers - self.past_measurements.to(self.device)
-        errors = torch.clamp(errors.abs(), 0, np.infty)
-        return errors
+    def _get_sampled_query_answers(self, fake_data):
+        q_t_idxs = self.past_query_idxs.clone()
+        queries = self.queries[q_t_idxs]
+        past_fake_answers = []
+        for queries_batch in torch.split(queries, 10000, dim=0):
+            fake_query_attr = fake_data[:, queries_batch]
+            answers = fake_query_attr.prod(-1).mean(axis=0)
+            past_fake_answers.append(answers)
+        past_fake_answers = torch.cat(past_fake_answers)
+        return past_fake_answers
 
     def _update_ema_error(self, error):
         if self.ema_error is None:
