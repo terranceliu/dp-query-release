@@ -129,8 +129,6 @@ class BaseGEM(IterativeAlgorithmTorch):
             errors = self._get_sampled_query_errors(fake_data.detach())
 
             # above THRESHOLD
-            # print(threshold)
-            # print(errors)
             mask = errors >= threshold
             idxs, q_t_idxs, errors = idxs[mask], q_t_idxs[mask], errors[mask]
 
@@ -154,7 +152,11 @@ class BaseGEM(IterativeAlgorithmTorch):
         fake_answers = self.G.get_all_qm_answers(fake_data)
         scores = (true_answers - fake_answers).abs()
 
-        for t in tqdm(range(self.T)):
+        pbar = tqdm(range(self.T))
+        for t in pbar:
+            if self.verbose:
+                pbar.set_description("Max Error: {:.6}".format(scores.max().item()))
+
             scores[self.past_query_idxs] = -np.infty # to ensure we don't resample past queries (though unlikely)
 
             # SAMPLE
@@ -181,14 +183,13 @@ class BaseGEM(IterativeAlgorithmTorch):
                 self.save('best.pkl')
             self.save('last.pkl')
 
-            if self.verbose and step > 0:
-                print("Epoch {}:\tTrue Error: {:.4f}\tEM Error: {:.4f}\n"
-                      "Iters: {}\tLoss: {:.8f}".format(
-                    t, self.true_max_errors[-1], self.sampled_max_errors[-1], step, loss.item()))
+            # if self.verbose and step > 0:
+            #     print("Epoch {}:\tTrue Error: {:.4f}\tEM Error: {:.4f}\n"
+            #           "Iters: {}\tLoss: {:.8f}".format(
+            #         t, self.true_max_errors[-1], self.sampled_max_errors[-1], step, loss.item()))
 
             if self.schedulerG is not None:
                 self.schedulerG.step()
-            print(self.optimizerG.param_groups[0]['lr'])
 
         if self.ema_weights:
             self._ema_weights()
@@ -279,7 +280,7 @@ class GEM_Nondp(BaseGEM):
             self.save('last.pkl')
 
             if self.verbose:
-                print("Epoch {}:\tTrue Error: {:.4f}\t\tLoss: {:.8f}".format(
+                print("Epoch {}:\tTrue Error: {:.6}\t\tLoss: {:.8f}".format(
                     t, self.true_max_errors[-1], loss.item()))
 
 def get_args():

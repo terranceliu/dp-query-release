@@ -78,7 +78,7 @@ class MWEM(IterativeAlgorithm):
         pbar = tqdm(range(self.T))
         for t in pbar:
             if self.verbose:
-                pbar.set_description("Max Error: {:.4f}".format(scores.max()))
+                pbar.set_description("Max Error: {:.6f}".format(scores.max()))
 
             # SAMPLE
             q_t_ind = self._sample(scores)
