@@ -1,12 +1,13 @@
 from algorithms.mwem import MWEM, get_args
 from qm import KWayMarginalSupportQM
-from utils.utils_data import get_data, get_rand_workloads
+from utils.utils_data import get_data, get_rand_workloads, get_default_cols
 from utils.utils_general import get_errors, get_per_round_budget_zCDP
 
 args = get_args()
 
 # load dataset (using csv filename)
 data = get_data(args.dataset)
+data = data.project(get_default_cols(args.dataset))
 
 # define our (workloads of) evaluation queries
 workloads = get_rand_workloads(data, args.workload, args.marginal, seed=args.workload_seed)

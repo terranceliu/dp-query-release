@@ -1,3 +1,5 @@
+import pdb
+
 import torch
 import argparse
 import numpy as np
@@ -62,12 +64,6 @@ class BaseGEM(IterativeAlgorithmTorch):
 
     def _get_sampled_query_answers(self, fake_data):
         q_t_idxs = self.past_query_idxs.clone()
-        fake_query_attr = fake_data[:, self.queries[q_t_idxs]]
-        past_fake_answers = fake_query_attr.prod(-1).mean(axis=0)
-        return past_fake_answers
-
-    def _get_sampled_query_answers(self, fake_data):
-        q_t_idxs = self.past_query_idxs.clone()
         queries = self.queries[q_t_idxs]
         past_fake_answers = []
         for queries_batch in torch.split(queries, 10000, dim=0):
@@ -76,6 +72,12 @@ class BaseGEM(IterativeAlgorithmTorch):
             past_fake_answers.append(answers)
         past_fake_answers = torch.cat(past_fake_answers)
         return past_fake_answers
+
+    def _get_sampled_query_errors(self, fake_data):
+        fake_answers = self._get_sampled_query_answers(fake_data)
+        real_answers = self.past_measurements.to(self.device)
+        errors = (real_answers - fake_answers).abs()
+        return errors
 
     def _update_ema_error(self, error):
         if self.ema_error is None:
@@ -127,6 +129,8 @@ class BaseGEM(IterativeAlgorithmTorch):
             errors = self._get_sampled_query_errors(fake_data.detach())
 
             # above THRESHOLD
+            # print(threshold)
+            # print(errors)
             mask = errors >= threshold
             idxs, q_t_idxs, errors = idxs[mask], q_t_idxs[mask], errors[mask]
 
@@ -173,6 +177,9 @@ class BaseGEM(IterativeAlgorithmTorch):
 
             if ((t + 1) % self.save_interval == 0) or (t + 1 > self.T - self.save_num):
                 self.save('epoch_{}.pkl'.format(t + 1))
+            if np.max(self.true_max_errors) == self.true_max_errors[-1]:
+                self.save('best.pkl')
+            self.save('last.pkl')
 
             if self.verbose and step > 0:
                 print("Epoch {}:\tTrue Error: {:.4f}\tEM Error: {:.4f}\n"
@@ -181,6 +188,7 @@ class BaseGEM(IterativeAlgorithmTorch):
 
             if self.schedulerG is not None:
                 self.schedulerG.step()
+            print(self.optimizerG.param_groups[0]['lr'])
 
         if self.ema_weights:
             self._ema_weights()
@@ -217,6 +225,62 @@ class GEM_Workloads(BaseGEM):
         noisy_answers = gaussian_mech(answers.cpu(), (1 - self.alpha) * self.eps0, 2 ** 0.5 * self.qm.sensitivity)
         noisy_answers = torch.clamp(noisy_answers, 0, 1)
         self.past_measurements = torch.cat([self.past_measurements, noisy_answers])
+
+class GEM_Nondp(BaseGEM):
+    def __init__(self, qm, T,
+                 data, device, default_dir=None,
+                 cont_columns=[],
+                 embedding_dim=128, gen_dim=(256, 256), batch_size=500, loss_p=1,
+                 lr=1e-4, eta_min=1e-5, resample=False, ema_error_factor=0.5,
+                 max_idxs=100, max_iters=100,
+                 verbose=False, seed=None,
+                 ):
+        super().__init__(qm, T, 0, data, device, default_dir=default_dir,
+                 cont_columns=cont_columns, embedding_dim=embedding_dim, gen_dim=gen_dim, batch_size=batch_size, loss_p=loss_p,
+                 lr=lr, eta_min=eta_min, resample=resample, max_idxs=max_idxs, max_iters=max_iters,
+                 ema_error_factor=ema_error_factor, verbose=verbose, seed=seed)
+
+    def _sample(self, scores):
+        pass
+
+    def _measure(self, answers):
+        pass
+
+    def fit(self, true_answers):
+        true_answers = torch.tensor(true_answers).to(self.device)
+
+        fake_data = self.G.generate_fake_data()
+        fake_answers = self.G.get_all_qm_answers(fake_data)
+
+        for t in tqdm(range(self.T)):
+            errors = (true_answers - fake_answers).abs().cpu().numpy()
+            p = errors / errors.sum()
+            idxs = np.random.choice(len(true_answers), size=self.max_idxs, p=p, replace=True)
+
+            fake_data = self.G.generate_fake_data()
+            fake_query_attr = fake_data[:, self.queries[idxs]]
+            fake_answer = fake_query_attr.prod(-1).mean(axis=0)
+            real_answer = true_answers[idxs]
+            loss = real_answer - fake_answer
+            loss = torch.norm(loss, p=self.loss_p) / len(loss)
+
+            self.optimizerG.zero_grad()
+            loss.backward()
+            self.optimizerG.step()
+            if self.schedulerG is not None:
+                self.schedulerG.step()
+
+            fake_data = self.G.generate_fake_data()
+            fake_answers = self.G.get_all_qm_answers(fake_data)
+            self.record_errors(true_answers.cpu().numpy(), fake_answers.cpu().numpy())
+
+            if np.max(self.true_max_errors) == self.true_max_errors[-1]:
+                self.save('best.pkl')
+            self.save('last.pkl')
+
+            if self.verbose:
+                print("Epoch {}:\tTrue Error: {:.4f}\t\tLoss: {:.8f}".format(
+                    t, self.true_max_errors[-1], loss.item()))
 
 def get_args():
     parser = argparse.ArgumentParser()

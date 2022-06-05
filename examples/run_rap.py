@@ -2,12 +2,13 @@ import torch
 
 from algorithms.rap import RAP, get_args
 from qm import KWayMarginalQM
-from utils.utils_data import get_data, get_rand_workloads
+from utils.utils_data import get_data, get_rand_workloads, get_default_cols
 from utils.utils_general import get_errors, get_per_round_budget_zCDP
 
 args = get_args()
 
 data = get_data(args.dataset)
+data = data.project(get_default_cols(args.dataset))
 workloads = get_rand_workloads(data, args.workload, args.marginal, seed=args.workload_seed)
 
 query_manager = KWayMarginalQM(data, workloads)

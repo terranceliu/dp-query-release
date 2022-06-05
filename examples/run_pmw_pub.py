@@ -1,13 +1,15 @@
 from algorithms.public_assisted.pmw_pub import PMWPub, get_args
 from qm import KWayMarginalQM, KWayMarginalSupportQMPublic
-from utils.utils_data import get_data, get_rand_workloads
+from utils.utils_data import get_data, get_rand_workloads, get_default_cols
 from utils.utils_general import get_errors, get_per_round_budget_zCDP
 
 args = get_args()
 
 # load dataset (using csv filename)
 data = get_data(args.dataset)
+data = data.project(get_default_cols(args.dataset))
 data_public = get_data(args.dataset_pub)
+data_public = data_public.project(get_default_cols(args.data_public))
 
 # define our (workloads of) evaluation queries
 workloads = get_rand_workloads(data, args.workload, args.marginal, seed=args.workload_seed)
