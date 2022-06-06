@@ -179,7 +179,7 @@ class BaseGEM(IterativeAlgorithmTorch):
 
             if ((t + 1) % self.save_interval == 0) or (t + 1 > self.T - self.save_num):
                 self.save('epoch_{}.pkl'.format(t + 1))
-            if np.max(self.true_max_errors) == self.true_max_errors[-1]:
+            if np.min(self.true_max_errors) == self.true_max_errors[-1]:
                 self.save('best.pkl')
             self.save('last.pkl')
 
@@ -275,7 +275,7 @@ class GEM_Nondp(BaseGEM):
             fake_answers = self.G.get_all_qm_answers(fake_data)
             self.record_errors(true_answers.cpu().numpy(), fake_answers.cpu().numpy())
 
-            if np.max(self.true_max_errors) == self.true_max_errors[-1]:
+            if np.min(self.true_max_errors) == self.true_max_errors[-1]:
                 self.save('best.pkl')
             self.save('last.pkl')
 
