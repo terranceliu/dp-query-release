@@ -200,7 +200,7 @@ class BaseGEM(IterativeAlgorithmTorch):
     def get_answers(self):
         return self.G.get_distr_answers()
 
-class GEM_Queries(BaseGEM):
+class GEM(BaseGEM):
     def _sample(self, scores):
         max_query_idx = exponential_mech(scores.detach().cpu().numpy(), self.alpha * self.eps0, self.qm.sensitivity)
         self.past_query_idxs = torch.cat([self.past_query_idxs, torch.tensor([max_query_idx])])
@@ -211,7 +211,7 @@ class GEM_Queries(BaseGEM):
         noisy_answer = torch.clamp(noisy_answer, 0, 1)
         self.past_measurements = torch.cat([self.past_measurements, torch.tensor([noisy_answer])])
 
-class GEM_Workloads(BaseGEM):
+class GEM_Marginal(BaseGEM): # sensitivity trick for marginal queries
     def _sample(self, scores):
         scores = list(scores[x[0]:x[1]] for x in list(self.qm.workload_idxs))
         scores = np.array([x.max().item() for x in scores]) # get max workload scores

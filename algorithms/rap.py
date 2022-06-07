@@ -68,18 +68,20 @@ class RAPBase(IterativeAlgorithmTorch):
         fake_answers = self.rt.get_all_qm_answers()
         scores = (true_answers - fake_answers).abs()
 
-        for t in tqdm(range(self.T)):
+        pbar = tqdm(range(self.T))
+        for t in pbar:
+            if self.verbose:
+                pbar.set_description("Max Error: {:.6}".format(scores.max().item()))
+
             for _ in range(self.K):
                 scores[self.past_query_idxs] = -np.infty
                 max_query_idx = self._sample(scores)
                 self._measure(true_answers[max_query_idx])
 
-                errors = self._get_sampled_query_errors()
-                self.sampled_max_errors.append(errors.max().item())
-
             step = 0
             scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, patience=self.max_iters,
                                                              threshold=1e-7, threshold_mode='rel')  # scheduler is just used for early stopping
+
             while step < self.max_iters:
                 self.optimizer.zero_grad()
 
@@ -95,21 +97,13 @@ class RAPBase(IterativeAlgorithmTorch):
                 self.optimizer.step()
                 self.rt.clip_weights()
                 step += 1
-                # print(step, loss.item())
 
             fake_answers = self.rt.get_all_qm_answers()
             scores = (true_answers - fake_answers).abs()
 
             self.record_errors(true_answers.cpu().numpy(), fake_answers.cpu().numpy())
 
-            if self.verbose and step > 0:
-                print("Epoch {}:\tTrue Error: {:.4f}\tEM Error: {:.4f}\n"
-                      "Iters: {}\tLoss: {:.8f}".format(
-                    t, self.true_max_errors[-1], self.sampled_max_errors[-1], step, loss.item()))
-
-
     def get_syndata(self):
-        # TODO
         pass
 
     def get_answers(self):
@@ -125,6 +119,22 @@ class RAP(RAPBase):
         noisy_answer = gaussian_mech(answers, (1 - self.alpha) * self.eps0, self.qm.sensitivity)
         noisy_answer = torch.clamp(noisy_answer, 0, 1)
         self.past_measurements = torch.cat([self.past_measurements, torch.tensor([noisy_answer])])
+
+class RAP_Marginal(RAPBase): # sensitivity trick for marginal queries
+    def _sample(self, scores):
+        scores = list(scores[x[0]:x[1]] for x in list(self.qm.workload_idxs))
+        scores = np.array([x.max().item() for x in scores]) # get max workload scores
+        max_workload_idx = exponential_mech(scores, self.alpha * self.eps0, self.qm.sensitivity)
+        max_query_idxs = np.arange(*self.qm.workload_idxs[max_workload_idx])
+
+        self.past_workload_idxs = torch.cat([self.past_workload_idxs, torch.tensor([max_workload_idx])])
+        self.past_query_idxs = torch.cat([self.past_query_idxs, torch.tensor(max_query_idxs)])
+        return max_query_idxs
+
+    def _measure(self, answers):
+        noisy_answers = gaussian_mech(answers.cpu(), (1 - self.alpha) * self.eps0, 2 ** 0.5 * self.qm.sensitivity)
+        noisy_answers = torch.clamp(noisy_answers, 0, 1)
+        self.past_measurements = torch.cat([self.past_measurements, noisy_answers])
 
 def get_args():
     parser = argparse.ArgumentParser()

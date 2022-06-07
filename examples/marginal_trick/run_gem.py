@@ -1,6 +1,6 @@
 import torch
 
-from algorithms.gem import get_args, GEM_Workloads as GEM
+from algorithms.gem import get_args, GEM_Marginal as GEM
 from qm import KWayMarginalQM
 from utils.utils_data import get_data, get_rand_workloads, get_default_cols
 from utils.utils_general import get_errors, get_per_round_budget_zCDP

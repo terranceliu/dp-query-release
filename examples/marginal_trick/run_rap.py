@@ -1,6 +1,6 @@
 import torch
 
-from algorithms.rap import RAP, get_args
+from algorithms.rap import RAP_Marginal as RAP, get_args
 from qm import KWayMarginalQM
 from utils.utils_data import get_data, get_rand_workloads, get_default_cols
 from utils.utils_general import get_errors, get_per_round_budget_zCDP
@@ -36,6 +36,3 @@ syndata_answers = rap.get_answers()
 errors = get_errors(true_answers, syndata_answers)
 
 print(errors)
-
-
-

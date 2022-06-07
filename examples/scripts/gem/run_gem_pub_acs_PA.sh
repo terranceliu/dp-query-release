@@ -20,7 +20,7 @@ EMA_WEIGHTS_BETA=0.5
 
 export PYTHONPATH="${PYTHONPATH}:${PWD}$"
 
-python examples/run_gem_pub.py --dataset $DATASET \
+python examples/public_assisted/run_gem_pub.py --dataset $DATASET \
 --marginal $MARGINAL --workload $WORKLOAD --workload_seed $WORKLOAD_SEED \
 --syndata $SYNDATA_SIZE --dim $DIM \
 --epsilon $EPSILON --alpha $ALPHA --T $T \
