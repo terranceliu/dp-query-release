@@ -7,7 +7,7 @@ from torch import optim
 from torch.nn import BatchNorm1d, Linear, Module, ReLU, Sequential
 
 from utils.utils_data import Dataset
-from utils.transformer import DataTransformer, get_missing_rows
+from utils.transformer import DataTransformer, get_domain_rows
 
 import pdb
 
@@ -41,9 +41,9 @@ class Generator(Module):
 
 class GenerativeNetwork():
     def __init__(self,
-                 device, qm, data,
+                 device, qm,
                  cont_columns=[],
-                 embedding_dim=128, gen_dim=(256, 256),
+                 embedding_dim=128, gen_dim=None,
                  batch_size=500, resample=False,
                  ):
         self.device = device
@@ -52,25 +52,24 @@ class GenerativeNetwork():
 
         # network architecture
         self.embedding_dim = embedding_dim
-        self.gen_dim = gen_dim
+        self.gen_dim = [2 * embedding_dim, 2 * embedding_dim] if gen_dim is None else gen_dim
         self.batch_size = batch_size
         self.resample = resample
 
         self.mean = torch.zeros(self.batch_size, self.embedding_dim, device=self.device)
         self.std = self.mean + 1
 
-        self.domain = data.domain
-        discrete_columns = [col for col in data.df.columns.values if col not in cont_columns]
-        self._setup_data(data.df, self.domain, discrete_columns=discrete_columns)
+        self.domain = self.qm.domain
+        self.cont_columns = cont_columns
+        self.discrete_columns = [col for col in self.domain.attrs if col not in self.cont_columns]
+        self._setup_data()
 
-    def _setup_data(self, train_data, domain, discrete_columns=[], overrides=[]):
-        extra_rows = get_missing_rows(train_data, discrete_columns, domain)
-        if len(extra_rows) > 0:
-            train_data = pd.concat([extra_rows, train_data]).reset_index(drop=True)
+    def _setup_data(self, overrides=[]):
+        df_domain = get_domain_rows(self.domain, self.discrete_columns)
 
         if not hasattr(self, "transformer") or 'transformer' in overrides:
             self.transformer = DataTransformer()
-            self.transformer.fit(train_data, discrete_columns)
+            self.transformer.fit(df_domain, self.discrete_columns)
 
         if not hasattr(self, "generator") or 'generator' in overrides:
             data_dim = self.transformer.output_dimensions

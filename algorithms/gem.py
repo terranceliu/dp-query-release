@@ -13,11 +13,10 @@ from utils.mechanisms import exponential_mech, gaussian_mech
 from algorithms.base.generative import GenerativeNetwork
 
 class BaseGEM(IterativeAlgorithmTorch):
-    def __init__(self, qm, T, eps0,
-                 data, device,
+    def __init__(self, qm, T, eps0, device,
                  alpha=0.5, default_dir=None,
                  cont_columns=[],
-                 embedding_dim=128, gen_dim=(256, 256), batch_size=500, loss_p=1,
+                 embedding_dim=128, gen_dim=None, batch_size=500, loss_p=1,
                  lr=1e-4, eta_min=1e-5, resample=False,
                  ema_beta=0.5, max_idxs=100, max_iters=100,
                  ema_error_factor=0, ema_weights=True, ema_weights_beta=0.9,
@@ -26,7 +25,7 @@ class BaseGEM(IterativeAlgorithmTorch):
                  ):
 
         super().__init__(qm, T, eps0, alpha=alpha, default_dir=default_dir, verbose=verbose, seed=seed)
-        self.G = GenerativeNetwork(device, qm, data, cont_columns=cont_columns,
+        self.G = GenerativeNetwork(device, qm, cont_columns=cont_columns,
                                    embedding_dim=embedding_dim, gen_dim=gen_dim,
                                    batch_size=batch_size, resample=resample)
 
@@ -228,15 +227,14 @@ class GEM_Marginal(BaseGEM): # sensitivity trick for marginal queries
         self.past_measurements = torch.cat([self.past_measurements, noisy_answers])
 
 class GEM_Nondp(BaseGEM):
-    def __init__(self, qm, T,
-                 data, device, default_dir=None,
+    def __init__(self, qm, T, device, default_dir=None,
                  cont_columns=[],
                  embedding_dim=128, gen_dim=(256, 256), batch_size=500, loss_p=1,
                  lr=1e-4, eta_min=1e-5, resample=False, ema_error_factor=0.5,
-                 max_idxs=100, max_iters=100,
+                 max_idxs=10000, max_iters=1,
                  verbose=False, seed=None,
                  ):
-        super().__init__(qm, T, 0, data, device, default_dir=default_dir,
+        super().__init__(qm, T, 0, device, default_dir=default_dir,
                  cont_columns=cont_columns, embedding_dim=embedding_dim, gen_dim=gen_dim, batch_size=batch_size, loss_p=loss_p,
                  lr=lr, eta_min=eta_min, resample=resample, max_idxs=max_idxs, max_iters=max_iters,
                  ema_error_factor=ema_error_factor, verbose=verbose, seed=seed)
@@ -256,18 +254,21 @@ class GEM_Nondp(BaseGEM):
         for t in tqdm(range(self.T)):
             errors = (true_answers - fake_answers).abs().cpu().numpy()
             p = errors / errors.sum()
-            idxs = np.random.choice(len(true_answers), size=self.max_idxs, p=p, replace=True)
+            # idxs = np.random.choice(len(true_answers), size=self.max_idxs, p=p, replace=True)
 
-            fake_data = self.G.generate_fake_data()
-            fake_query_attr = fake_data[:, self.queries[idxs]]
-            fake_answer = fake_query_attr.prod(-1).mean(axis=0)
-            real_answer = true_answers[idxs]
-            loss = real_answer - fake_answer
-            loss = torch.norm(loss, p=self.loss_p) / len(loss)
+            for _ in range(self.max_iters):
+                idxs = np.random.choice(len(true_answers), size=self.max_idxs, p=p, replace=True)
+                fake_data = self.G.generate_fake_data()
+                fake_query_attr = fake_data[:, self.queries[idxs]]
+                fake_answer = fake_query_attr.prod(-1).mean(axis=0)
+                real_answer = true_answers[idxs]
+                loss = real_answer - fake_answer
+                loss = torch.norm(loss, p=self.loss_p) / len(loss)
 
-            self.optimizerG.zero_grad()
-            loss.backward()
-            self.optimizerG.step()
+                self.optimizerG.zero_grad()
+                loss.backward()
+                self.optimizerG.step()
+
             if self.schedulerG is not None:
                 self.schedulerG.step()
 

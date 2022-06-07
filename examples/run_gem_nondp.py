@@ -3,7 +3,6 @@ import torch
 from algorithms.gem import get_args, GEM_Nondp as GEM
 from qm import KWayMarginalQM
 from utils.utils_data import get_data, get_rand_workloads, get_default_cols
-from utils.utils_general import get_errors, get_per_round_budget_zCDP
 
 args = get_args()
 
@@ -18,7 +17,7 @@ model_save_dir = './save/GEM_Nondp/{}/{}_{}_{}/{}_{}_{}/'.format(args.dataset,
                                                            args.marginal, args.workload, args.workload_seed,
                                                            args.dim, args.syndata_size, args.resample)
 
-gem = GEM(query_manager, args.T, data, device, default_dir=model_save_dir,
+gem = GEM(query_manager, args.T, device, default_dir=model_save_dir,
           embedding_dim=args.dim, gen_dim=[args.dim * 2, args.dim * 2], batch_size=args.syndata_size,
           loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min, resample=args.resample,
           max_idxs=args.max_idxs, max_iters=args.max_iters, verbose=args.verbose, seed=args.test_seed)

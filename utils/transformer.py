@@ -4,27 +4,17 @@ import numpy as np
 import pandas as pd
 from rdt.transformers import OneHotEncodingTransformer
 
-# TODO: add more comments
 """
 Discrete columns only
 """
-def get_missing_rows(train_data, discrete_columns, domain):
-    missing_cols = {}
+def get_domain_rows(domain, discrete_columns):
+    max_attr_domain = max(domain.shape)
+    df_domain = pd.DataFrame(np.zeros((max_attr_domain, len(domain))), columns=domain.attrs, dtype=int)
     for col in discrete_columns:
-        domain_vals = set(np.arange(domain[col]))
-        train_data_vals = set(train_data[col].unique())
-        missing = list(domain_vals - train_data_vals)
-        if len(missing) != 0:
-            missing_cols[col] = missing
+        domain_vals = np.arange(domain[col])
+        df_domain.loc[:domain[col] - 1, col] = domain_vals
 
-    extra_rows = []
-    if len(missing_cols) != 0:
-        num_extra_rows = max([len(x) for x in missing_cols.values()])
-        extra_rows = train_data.loc[:num_extra_rows - 1].copy()
-        for col, missing_vals in missing_cols.items():
-            extra_rows.loc[:len(missing_vals) - 1, col] = missing_vals
-
-    return extra_rows
+    return df_domain
 
 
 class DummyEncoderTransformer():

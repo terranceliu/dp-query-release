@@ -21,8 +21,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model_save_dir = './save/GEM/{}/{}_{}_{}/{}_{}_{}_{}/'.format(args.dataset,
                                                             args.marginal, args.workload, args.workload_seed,
                                                             args.epsilon, args.T, args.alpha, args.syndata_size)
-gem = GEM(query_manager, args.T, eps0,
-          data, device,
+gem = GEM(query_manager, args.T, eps0, device,
           alpha=args.alpha, default_dir=model_save_dir,
           embedding_dim=args.dim, gen_dim=[args.dim * 2],
           batch_size=args.syndata_size, loss_p=args.loss_p,

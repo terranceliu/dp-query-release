@@ -32,8 +32,7 @@ gem_nondp.load('best.pkl')
 model_save_dir = './save/GEM_Pub/{}/{}/{}_{}_{}/{}_{}_{}/'.format(args.dataset, args.dataset_pub,
                                                            args.marginal, args.workload, args.workload_seed,
                                                            args.dim, args.syndata_size, args.resample)
-gem = GEM(query_manager, args.T, eps0,
-          data, device,
+gem = GEM(query_manager, args.T, eps0, device,
           alpha=args.alpha, default_dir=model_save_dir,
           embedding_dim=args.dim, gen_dim=[args.dim * 2, args.dim * 2],
           batch_size=args.syndata_size, loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min, resample=args.resample,
