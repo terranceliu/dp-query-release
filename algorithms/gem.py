@@ -146,6 +146,8 @@ class BaseGEM(IterativeAlgorithmTorch):
         return loss, step
 
     def fit(self, true_answers):
+        self.optimizerG.step() # just to avoid warning
+
         true_answers = torch.tensor(true_answers).to(self.device)
         fake_data = self.G.generate_fake_data()
         fake_answers = self.G.get_all_qm_answers(fake_data)
