@@ -2,6 +2,7 @@ import torch
 import argparse
 import numpy as np
 import pandas as pd
+from abc import ABC, abstractmethod
 
 from torch import optim
 from torch.nn import BatchNorm1d, Linear, Module, ReLU, Sequential, Embedding
@@ -48,7 +49,7 @@ class Fixed(Module):
     def forward(self, input):
         return self.syndata.weight
 
-class Generator():
+class Generator(ABC):
     def __init__(self, qm,
                  cont_columns=[], agg_mapping={},
                  K=1000, query_bs=10000, device='cpu',
@@ -104,14 +105,14 @@ class Generator():
             x[:, pos] = x[:, pos_agg_list].sum(axis=-1)
         return x
 
-    def _get_query_answers(self, x, idxs=None):
+    def get_answers(self, x, idxs=None):
         # fake_data, sampling_weights = fake_data[:, :-1], fake_data[:, -1:]
         queries = self.queries
         if idxs is not None:
             queries = queries[idxs]
 
         answers = []
-        for queries_batch in torch.split(queries, self.qm_query_bs, dim=0):
+        for queries_batch in torch.split(queries, self.query_bs, dim=0):
             answers_batch = x[:, queries_batch.T]
             answers_batch = answers_batch.prod(1)
             # answers_batch = answers_batch * sampling_weights
@@ -124,8 +125,8 @@ class Generator():
         return answers
 
     def get_qm_answers(self):
-        syn_distribution = self.generate().detach()
-        answers = self._get_query_answers(syn_distribution)
+        syn = self.generate().detach()
+        answers = self.get_answers(syn)
         return answers.cpu().numpy()
 
     def _get_onehot(self, data):
@@ -147,9 +148,9 @@ class Generator():
     def get_syndata(self, num_samples=100000): # TODO: any # samples
         samples = []
 
-        syn_distribution = self.generate().detach()
-        for i in range(num_samples // self.batch_size):
-            x = self.get_onehot(syn_distribution)
+        syn = self.generate().detach()
+        for i in range(num_samples // self.K):
+            x = self._get_onehot(syn)
             samples.append(x)
         samples = torch.cat(samples, dim=0).cpu()
 
@@ -162,15 +163,14 @@ class Generator():
         data_synth = Dataset(df, self.domain)
         return data_synth
 
-class FixedGenerator():
+class FixedGenerator(Generator):
     def _setup_generator(self):
         self.generator = Fixed(self.K, self.data_dim).to(self.device)
 
-    @abstractmethod
     def _generate(self):
         return self.generator(None)
 
-class NeuralNetworkGenerator():
+class NeuralNetworkGenerator(Generator):
     def __init__(self, qm,
                  cont_columns=[], agg_mapping={},
                  K=1000, query_bs=10000, device='cpu',
@@ -188,7 +188,6 @@ class NeuralNetworkGenerator():
     def _setup_generator(self):
         self.generator = GenerativeNetwork(self.embedding_dim, self.gen_dims, self.data_dim).to(self.device)
 
-    @abstractmethod
     def _generate(self):
         if self.resample:
             self.z = torch.normal(mean=self.z_mean, std=self.z_std)
@@ -315,16 +314,16 @@ class NeuralNetworkGenerator():
 #         return torch.cat(data_t, dim=1)
 #
 #     def get_distr_answers(self):
-#         syn_distribution = self.generate_fake_data().detach()
-#         answers = self.get_query_answers(syn_distribution)
+#         syn = self.generate_fake_data().detach()
+#         answers = self.get_query_answers(syn)
 #         return answers.cpu().numpy()
 #
 #     def get_syndata(self, num_samples=100000):
 #         samples = []
 #
-#         syn_distribution = self.generate_fake_data()
+#         syn = self.generate_fake_data()
 #         for i in range(num_samples // self.batch_size):
-#             x = self.get_onehot(syn_distribution)
+#             x = self.get_onehot(syn)
 #             samples.append(x)
 #         x = torch.cat(samples, dim=0).cpu()
 #         x[:, list(self.agg_mapping.keys())] = 0

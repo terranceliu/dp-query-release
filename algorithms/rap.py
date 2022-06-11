@@ -7,7 +7,7 @@ from tqdm import tqdm
 from torch import optim
 
 from qm import KWayMarginalQM
-from algorithms.algo import IterativeAlgorithmTorch
+from algorithms.base.algo import IterativeAlgorithmTorch
 from utils.mechanisms import exponential_mech, gaussian_mech
 
 from algorithms.base.relaxed_tabular import RelaxedTabular

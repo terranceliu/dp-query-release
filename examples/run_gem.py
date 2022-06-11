@@ -23,8 +23,8 @@ model_save_dir = './save/GEM/{}/{}_{}_{}/{}_{}_{}_{}/'.format(args.dataset,
                                                             args.epsilon, args.T, args.alpha, args.syndata_size)
 gem = GEM(query_manager, args.T, eps0, device,
           alpha=args.alpha, default_dir=model_save_dir,
-          embedding_dim=args.dim, gen_dim=[args.dim * 2, args.dim * 2],
-          batch_size=args.syndata_size, loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min, resample=args.resample,
+          embedding_dim=args.dim, gen_dims=None,
+          K=args.syndata_size, loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min, resample=args.resample,
           max_idxs=args.max_idxs, max_iters=args.max_iters, ema_error_factor=0.5,
           verbose=args.verbose, seed=args.test_seed,
           )

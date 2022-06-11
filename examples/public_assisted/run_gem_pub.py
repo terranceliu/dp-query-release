@@ -25,7 +25,7 @@ args.dataset_pub = 'acs_OH'
 model_public_save_dir = './save/GEM_Nondp/{}/{}_{}_{}/{}_{}_{}/'.format(args.dataset_pub,
                                                            args.marginal, args.workload, args.workload_seed,
                                                            args.dim, args.syndata_size, args.resample)
-gem_nondp = GEM_Nondp(query_manager, 10000, data, device, default_dir=model_public_save_dir)
+gem_nondp = GEM_Nondp(query_manager, 10000, device, default_dir=model_public_save_dir)
 gem_nondp.load('best.pkl')
 
 # initialize GEM
@@ -34,12 +34,12 @@ model_save_dir = './save/GEM_Pub/{}/{}/{}_{}_{}/{}_{}_{}/'.format(args.dataset, 
                                                            args.dim, args.syndata_size, args.resample)
 gem = GEM(query_manager, args.T, eps0, device,
           alpha=args.alpha, default_dir=model_save_dir,
-          embedding_dim=args.dim, gen_dim=[args.dim * 2, args.dim * 2],
-          batch_size=args.syndata_size, loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min, resample=args.resample,
+          embedding_dim=args.dim, gen_dims=None,
+          K=args.syndata_size, loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min, resample=args.resample,
           max_idxs=args.max_idxs, max_iters=args.max_iters, ema_error_factor=0.5,
           verbose=args.verbose, seed=args.test_seed,
           )
-gem.G = gem_nondp.G
+gem.G.generator.load_state_dict(gem_nondp.G.generator.state_dict())
 
 true_answers = query_manager.get_answers(data)
 gem.fit(true_answers)

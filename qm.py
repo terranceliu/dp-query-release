@@ -30,6 +30,10 @@ class QueryManager(ABC):
         self.workload_idxs = np.cumsum(workload_lens)
         self.workload_idxs = np.vstack([self.workload_idxs[:-1], self.workload_idxs[1:]]).T
 
+        self.query_workload_map = np.zeros(self.num_queries, dtype=int)
+        for i, (start, end) in enumerate(self.workload_idxs):
+            self.query_workload_map[start:end] = i
+
     @abstractmethod
     def _setup_queries(self):
         pass
@@ -52,17 +56,21 @@ class BaseKWayMarginalQM(QueryManager):
         for i, col in enumerate(self.domain.attrs):
             self.col_map[col] = i
 
-        self.feat_pos = []
+        self.feat_pos_map = []
         cur = 0
         for sz in self.domain.shape:
-            self.feat_pos.append(list(range(cur, cur + sz)))
+            self.feat_pos_map.append(list(range(cur, cur + sz)))
             cur += sz
 
-        self.pos_col = {}
+        self.col_pos_map = {}
+        for col, i in self.col_map.items():
+            self.col_pos_map[col] = self.feat_pos_map[i]
+
+        self.pos_col_map = {}
         for i, col in enumerate(self.col_map.keys()):
-            for pos in self.feat_pos[i]:
-                attr_val = pos - self.feat_pos[i][0]
-                self.pos_col[pos] = (col, attr_val)
+            for pos in self.feat_pos_map[i]:
+                attr_val = pos - self.feat_pos_map[i][0]
+                self.pos_col_map[pos] = (col, attr_val)
 
     def _setup_queries(self):
         print("Initializing self.queries...")
@@ -77,13 +85,37 @@ class BaseKWayMarginalQM(QueryManager):
             positions = []
             for col in feat:
                 i = self.col_map[col]
-                positions.append(self.feat_pos[i])
+                positions.append(self.feat_pos_map[i])
             x = list(itertools.product(*positions))
             x = np.array(x)
             self.queries[idx:idx + x.shape[0], :x.shape[1]] = x
             idx += x.shape[0]
 
         return self.queries
+
+    def filter_query_workloads(self, workload_mask):
+        self.workloads = np.array(self.workloads)[workload_mask].tolist()
+        self.workload_lens = np.array(self.workload_lens)[workload_mask].tolist()
+
+        workload_idxs = self.workload_idxs[workload_mask]
+        query_mask = np.zeros(self.num_queries, dtype=bool)
+        for start, end in workload_idxs:
+            query_mask[start:end] = True
+        self.queries = self.queries[query_mask]
+        self.num_queries = len(self.queries)
+
+        for i in range(1, len(workload_idxs)):
+            end_prev = workload_idxs[i - 1, 1]
+            start = workload_idxs[i, 0]
+            diff = start - end_prev
+            workload_idxs[i:] -= diff
+        self.workload_idxs = workload_idxs
+
+        self.query_workload_map = np.zeros(self.num_queries, dtype=int)
+        for i, (start, end) in enumerate(self.workload_idxs):
+            self.query_workload_map[start:end] = i
+
+        return query_mask
 
 
 """

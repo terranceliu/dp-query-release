@@ -15,6 +15,23 @@ MAX_ITERS=1
 
 export PYTHONPATH="${PYTHONPATH}:${PWD}$"
 
+#python examples/run_gem_nondp.py --dataset $DATASET \
+#--marginal $MARGINAL --workload $WORKLOAD --workload_seed $WORKLOAD_SEED \
+#--syndata $SYNDATA_SIZE --dim $DIM \
+#--loss_p $LOSS_P --max_idxs $MAX_IDXS --max_iters $MAX_ITERS \
+#--verbose --test_seed 0 --T 10000 --lr 5e-4 --eta_min 1e-7
+
+
+DATASET=acs_CA
+
+python examples/run_gem_nondp.py --dataset $DATASET \
+--marginal $MARGINAL --workload $WORKLOAD --workload_seed $WORKLOAD_SEED \
+--syndata $SYNDATA_SIZE --dim $DIM \
+--loss_p $LOSS_P --max_idxs $MAX_IDXS --max_iters $MAX_ITERS \
+--verbose --test_seed 0 --T 10000 --lr 5e-4 --eta_min 1e-7
+
+DATASET=acs_OH
+
 python examples/run_gem_nondp.py --dataset $DATASET \
 --marginal $MARGINAL --workload $WORKLOAD --workload_seed $WORKLOAD_SEED \
 --syndata $SYNDATA_SIZE --dim $DIM \

@@ -33,10 +33,7 @@ def gaussian_mech(true_val, eps0, sensitivity):
         size = true_val.shape
     except:
         size = 1
-
     noise = np.random.normal(loc=0, scale=sensitivity / eps0, size=size)
-    if isinstance(true_val, torch.Tensor):
-        noise = torch.tensor(noise)
     return true_val + noise
 
 def laplace_mech(input, eps0, sensitivity):

@@ -6,7 +6,7 @@ import pandas as pd
 
 from tqdm import tqdm
 from qm import KWayMarginalSupportQM
-from algorithms.algo import IterativeAlgorithm
+from algorithms.base.algo import IterativeAlgorithm
 from utils.mechanisms import exponential_mech, gaussian_mech
 
 class MWEM(IterativeAlgorithm):
