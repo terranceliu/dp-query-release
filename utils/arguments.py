@@ -1,6 +1,6 @@
 import argparse
 
-def get_args(base, iterative):
+def get_args(base, iterative, public=False):
     parser = argparse.ArgumentParser()
 
     # data args
@@ -28,12 +28,21 @@ def get_args(base, iterative):
         parser.add_argument('--resample', action='store_true')
     elif base == 'fixed':
         parser.add_argument('--K', type=int, default=1000)
+    else:
+        assert False, 'invalid base generator selection'
 
     if iterative == 'gem':
         parser.add_argument('--ema_weights', action='store_true')
         parser.add_argument('--ema_weights_beta', type=float, default=0.9)
     elif iterative == 'rap_softmax':
         parser.add_argument('--samples_per_round', type=int, default=1)
+    elif iterative == 'non_dp':
+        pass
+    else:
+        assert False, 'invalid iterative algorithm procedure'
+
+    if public:
+        parser.add_argument('--dataset_pub', type=str)
 
     args = parser.parse_args()
 

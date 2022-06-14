@@ -12,7 +12,7 @@ class IterativeAlgoGEM(IterativeAlgorithmTorch):
     def __init__(self, G, qm, T, eps0, device,
                  alpha=0.5, default_dir=None, verbose=False, seed=None,
                  loss_p=1, lr=1e-4, eta_min=1e-5, max_idxs=100, max_iters=100,
-                 ema_beta=0.5, ema_error_factor=0,
+                 ema_beta=0.5, ema_error_factor=0.5,
                  ema_weights=True, ema_weights_beta=0.9,
                  save_interval=10, save_num=None,
                  ):
@@ -160,59 +160,3 @@ class IterativeAlgoGEM(IterativeAlgorithmTorch):
                     weights[key] = self.ema_weights_beta * weights[key] + (1 - self.ema_weights_beta) * w[key]
 
         self.G.generator.load_state_dict(weights)
-
-
-#
-# class GEM_Nondp(BaseGEM):
-#     def __init__(self, qm, T, device, default_dir=None,
-#                  cont_columns=[], agg_mapping={},
-#                  embedding_dim=128, gen_dims=None, K=500, loss_p=1,
-#                  lr=1e-4, eta_min=1e-5, resample=False, ema_error_factor=0.5,
-#                  max_idxs=10000, max_iters=1,
-#                  verbose=False, seed=None,
-#                  ):
-#         super().__init__(qm, T, 0, device, default_dir=default_dir,
-#                          cont_columns=cont_columns, agg_mapping=agg_mapping,
-#                          embedding_dim=embedding_dim, gen_dims=gen_dims, K=K, loss_p=loss_p,
-#                          lr=lr, eta_min=eta_min, resample=resample, max_idxs=max_idxs, max_iters=max_iters,
-#                          ema_error_factor=ema_error_factor, verbose=verbose, seed=seed)
-#
-#     def _sample(self, scores):
-#         pass
-#
-#     def _measure(self, answers):
-#         pass
-#
-#     def fit(self, true_answers):
-#         self.past_query_idxs = torch.arange(self.qm.num_queries)
-#         self.past_measurements = torch.tensor(true_answers)
-#
-#         syn_answers = self.G.get_qm_answers()
-#         errors = np.abs(true_answers - syn_answers)
-#
-#         pbar = tqdm(range(self.T))
-#         for t in pbar:
-#             if self.verbose:
-#                 pbar.set_description("Max Error: {:.6}".format(errors.max()))
-#
-#             p = errors / errors.sum()
-#             # print(self.qm.workloads[self.qm.query_workload_map[errors.argmax()]])
-#
-#             for _ in range(self.max_iters):
-#                 self.optimizerG.zero_grad()
-#                 idxs = np.random.choice(len(true_answers), size=self.max_idxs, p=p, replace=True)
-#                 loss = self._get_loss(idxs)
-#
-#                 loss.backward()
-#                 self.optimizerG.step()
-#
-#             if self.schedulerG is not None:
-#                 self.schedulerG.step()
-#
-#             syn_answers = self.G.get_qm_answers()
-#             errors = np.abs(true_answers - syn_answers)
-#             self.record_errors(true_answers, syn_answers)
-#
-#             if np.min(self.true_max_errors) == self.true_max_errors[-1]:
-#                 self.save('best.pkl')
-#             self.save('last.pkl')

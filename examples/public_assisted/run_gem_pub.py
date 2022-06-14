@@ -1,13 +1,14 @@
 import torch
 
-from algorithms.gem import get_args, GEM_Nondp, GEM
 from qm import KWayMarginalQM
+from utils.arguments import get_args
 from utils.utils_data import get_data, get_rand_workloads, get_default_cols
 from utils.utils_general import get_errors, get_per_round_budget_zCDP
 
-import pdb
+from algorithms.base.generator import NeuralNetworkGenerator
+from algorithms.gem import IterativeAlgoGEM
 
-args = get_args()
+args = get_args(base='nn', iterative='gem', public=True)
 
 data = get_data(args.dataset)
 data = data.project(get_default_cols(args.dataset))
@@ -21,30 +22,39 @@ eps0, rho = get_per_round_budget_zCDP(args.epsilon, delta, args.T, alpha=args.al
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # load pretrained GEM weights
-args.dataset_pub = 'acs_OH'
 model_public_save_dir = './save/GEM_Nondp/{}/{}_{}_{}/{}_{}_{}/'.format(args.dataset_pub,
-                                                           args.marginal, args.workload, args.workload_seed,
-                                                           args.dim, args.syndata_size, args.resample)
-gem_nondp = GEM_Nondp(query_manager, 10000, device, default_dir=model_public_save_dir)
-gem_nondp.load('best.pkl')
+                                                                        args.marginal, args.workload,
+                                                                        args.workload_seed,
+                                                                        args.dim, args.K, args.resample)
+G = NeuralNetworkGenerator(query_manager, K=args.K, device=device, init_seed=args.test_seed,
+                           embedding_dim=args.dim, gen_dims=None, resample=args.resample)
+algo_nondp = IterativeAlgoGEM(G, query_manager, args.T, eps0, device,
+                              alpha=args.alpha, default_dir=model_public_save_dir, verbose=args.verbose,
+                              seed=args.test_seed,
+                              loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min,
+                              max_idxs=args.max_idxs, max_iters=args.max_iters,
+                              ema_error_factor=0.5, ema_weights=args.ema_weights,
+                              ema_weights_beta=args.ema_weights_beta)
+algo_nondp.load('best.pkl')
 
 # initialize GEM
 model_save_dir = './save/GEM_Pub/{}/{}/{}_{}_{}/{}_{}_{}/'.format(args.dataset, args.dataset_pub,
-                                                           args.marginal, args.workload, args.workload_seed,
-                                                           args.dim, args.syndata_size, args.resample)
-gem = GEM(query_manager, args.T, eps0, device,
-          alpha=args.alpha, default_dir=model_save_dir,
-          embedding_dim=args.dim, gen_dims=None,
-          K=args.syndata_size, loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min, resample=args.resample,
-          max_idxs=args.max_idxs, max_iters=args.max_iters, ema_error_factor=0.5,
-          verbose=args.verbose, seed=args.test_seed,
-          )
-gem.G.generator.load_state_dict(gem_nondp.G.generator.state_dict())
+                                                                  args.marginal, args.workload, args.workload_seed,
+                                                                  args.epsilon, args.T, args.alpha,
+                                                                  args.K, args.resample)
+G = NeuralNetworkGenerator(query_manager, K=args.K, device=device, init_seed=args.test_seed,
+                           embedding_dim=args.dim, gen_dims=None, resample=args.resample)
+algo = IterativeAlgoGEM(G, query_manager, args.T, eps0, device,
+                        alpha=args.alpha, default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
+                        loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min,
+                        max_idxs=args.max_idxs, max_iters=args.max_iters,
+                        ema_weights=args.ema_weights, ema_weights_beta=args.ema_weights_beta)
+algo.G.generator.load_state_dict(algo_nondp.G.generator.state_dict())
 
 true_answers = query_manager.get_answers(data)
-gem.fit(true_answers)
+algo.fit(true_answers)
 
-syndata = gem.get_syndata()
+syndata = algo.get_syndata()
 syndata_answers = query_manager.get_answers(syndata)
 errors = get_errors(true_answers, syndata_answers)
 

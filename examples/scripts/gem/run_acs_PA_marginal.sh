@@ -3,22 +3,20 @@
 DATASET=acs_PA
 
 MARGINAL=3
-WORKLOAD=1000
+WORKLOAD=3200
 WORKLOAD_SEED=0
 
 EPSILON=1.0
 T=200
-ALPHA=0.67
+ALPHA=0.5
 
-DIM=256
 K=1000
+DIM=256
 
 LOSS_P=2
 LR=1e-4
 MAX_IDXS=100
 MAX_ITERS=100
-
-EMA_WEIGHTS_BETA=0.5
 
 export PYTHONPATH="${PYTHONPATH}:${PWD}$"
 
@@ -27,5 +25,4 @@ python examples/marginal_trick/run_gem.py --dataset $DATASET \
 --epsilon $EPSILON --T $T --alpha $ALPHA \
 --K $K --dim $DIM \
 --loss_p $LOSS_P --lr $LR --max_idxs $MAX_IDXS --max_iters $MAX_ITERS \
---ema_weights --ema_weights_beta $EMA_WEIGHTS_BETA \
 --verbose --test_seed 0

@@ -1,10 +1,13 @@
 import torch
 
-from algorithms.gem import get_args, GEM_Nondp as GEM
 from qm import KWayMarginalQM
+from utils.arguments import get_args
 from utils.utils_data import get_data, get_rand_workloads, get_default_cols
 
-args = get_args()
+from algorithms.base.generator import NeuralNetworkGenerator
+from algorithms.non_dp import IterativeAlgoNonDP
+
+args = get_args('nn', 'non_dp')
 
 data = get_data(args.dataset)
 data = data.project(get_default_cols(args.dataset))
@@ -14,13 +17,15 @@ query_manager = KWayMarginalQM(data, workloads)
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model_save_dir = './save/GEM_Nondp/{}/{}_{}_{}/{}_{}_{}/'.format(args.dataset,
-                                                           args.marginal, args.workload, args.workload_seed,
-                                                           args.dim, args.syndata_size, args.resample)
+                                                                 args.marginal, args.workload, args.workload_seed,
+                                                                 args.dim, args.K, args.resample)
 
-gem = GEM(query_manager, args.T, device, default_dir=model_save_dir,
-          embedding_dim=args.dim, gen_dims=None, K=args.syndata_size,
-          loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min, resample=args.resample,
-          max_idxs=args.max_idxs, max_iters=args.max_iters, verbose=args.verbose, seed=args.test_seed)
+G = NeuralNetworkGenerator(query_manager, K=args.K, device=device, init_seed=args.test_seed,
+                           embedding_dim=args.dim, gen_dims=None, resample=args.resample)
+algo = IterativeAlgoNonDP(G, query_manager, args.T, device,
+                          default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
+                          loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min,
+                          max_idxs=args.max_idxs, max_iters=args.max_iters)
 
 true_answers = query_manager.get_answers(data)
-gem.fit(true_answers)
+algo.fit(true_answers)
