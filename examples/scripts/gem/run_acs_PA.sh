@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DATASET=acs_CA
+DATASET=acs_PA
 
 MARGINAL=3
 WORKLOAD=1000
@@ -8,22 +8,24 @@ WORKLOAD_SEED=0
 
 EPSILON=1.0
 T=200
+ALPHA=0.67
 
 DIM=256
-SYNDATA_SIZE=1000
+K=1000
 
 LOSS_P=2
-MAX_IDXS=10000
+LR=1e-4
+MAX_IDXS=100
 MAX_ITERS=100
-ALPHA=0.5
+
 EMA_WEIGHTS_BETA=0.5
 
 export PYTHONPATH="${PYTHONPATH}:${PWD}$"
 
-python examples/marginal_trick/run_gem.py --dataset $DATASET \
+python examples/run_gem.py --dataset $DATASET \
 --marginal $MARGINAL --workload $WORKLOAD --workload_seed $WORKLOAD_SEED \
---syndata $SYNDATA_SIZE --dim $DIM \
---epsilon $EPSILON --alpha $ALPHA --T $T \
---loss_p $LOSS_P --max_idxs $MAX_IDXS --max_iters $MAX_ITERS \
+--epsilon $EPSILON --T $T --alpha $ALPHA \
+--K $K --dim $DIM \
+--loss_p $LOSS_P --lr $LR --max_idxs $MAX_IDXS --max_iters $MAX_ITERS \
 --ema_weights --ema_weights_beta $EMA_WEIGHTS_BETA \
 --verbose --test_seed 0

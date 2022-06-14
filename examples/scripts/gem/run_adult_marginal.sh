@@ -15,14 +15,14 @@ K=1000
 
 LOSS_P=2
 LR=1e-4
-MAX_IDXS=100
+MAX_IDXS=10000
 MAX_ITERS=100
 
 EMA_WEIGHTS_BETA=0.5
 
 export PYTHONPATH="${PYTHONPATH}:${PWD}$"
 
-python examples/run_gem.py --dataset $DATASET \
+python examples/marginal_trick/run_gem.py --dataset $DATASET \
 --marginal $MARGINAL --workload $WORKLOAD --workload_seed $WORKLOAD_SEED \
 --epsilon $EPSILON --T $T --alpha $ALPHA \
 --K $K --dim $DIM \

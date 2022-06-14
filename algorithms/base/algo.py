@@ -139,10 +139,11 @@ class IterativeAlgorithm(ABC):
         pass
 
 class IterativeAlgorithmTorch(IterativeAlgorithm):
-    def __init__(self, qm, T, eps0,
+    def __init__(self, G, qm, T, eps0,
                  alpha=0.5, default_dir=None, verbose=False, seed=None):
         super().__init__(qm, T, eps0,
                          alpha=alpha, default_dir=default_dir, verbose=verbose, seed=seed)
+        self.G = G
 
         # convert these lists into tensors for Pytorch code
         self.past_workload_idxs = torch.tensor([]).long() # only used for sensitivity trick implementations
@@ -152,3 +153,21 @@ class IterativeAlgorithmTorch(IterativeAlgorithm):
     def _set_seed(self):
         super()._set_seed()
         torch.manual_seed(self.seed)
+
+    def get_syndata(self, num_samples=100000):
+        return self.G.get_syndata(num_samples=num_samples)
+
+    def get_answers(self):
+        return self.G.get_qm_answers()
+
+    def _get_sampled_query_errors(self, idxs=None):
+        q_t_idxs = self.past_query_idxs.clone()
+        real_answers = self.past_measurements.to(self.device)
+        if idxs is not None:
+            q_t_idxs = q_t_idxs[idxs]
+            real_answers = real_answers[idxs]
+
+        syn = self.G.generate()
+        syn_answers = self.G.get_answers(syn, idxs=q_t_idxs)
+        errors = real_answers - syn_answers
+        return errors

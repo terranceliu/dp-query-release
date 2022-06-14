@@ -1,7 +1,4 @@
-import pdb
-
 import torch
-import argparse
 import numpy as np
 
 from tqdm import tqdm
@@ -10,24 +7,16 @@ from torch import optim
 from qm import KWayMarginalQM
 from algorithms.base.algo import IterativeAlgorithmTorch
 from utils.mechanisms import exponential_mech, gaussian_mech
-from algorithms.base.generator import NeuralNetworkGenerator, FixedGenerator
 
-class BaseGEM(IterativeAlgorithmTorch):
-    def __init__(self, qm, T, eps0, device,
-                 alpha=0.5, default_dir=None,
-                 cont_columns=[], agg_mapping={},
-                 embedding_dim=128, gen_dims=None, K=1000, loss_p=1,
-                 lr=1e-4, eta_min=1e-5, resample=False,
-                 ema_beta=0.5, max_idxs=100, max_iters=100,
-                 ema_error_factor=0, ema_weights=True, ema_weights_beta=0.9,
+class IterativeAlgoGEM(IterativeAlgorithmTorch):
+    def __init__(self, G, qm, T, eps0, device,
+                 alpha=0.5, default_dir=None, verbose=False, seed=None,
+                 loss_p=1, lr=1e-4, eta_min=1e-5, max_idxs=100, max_iters=100,
+                 ema_beta=0.5, ema_error_factor=0,
+                 ema_weights=True, ema_weights_beta=0.9,
                  save_interval=10, save_num=None,
-                 verbose=False, seed=None,
                  ):
-
-        super().__init__(qm, T, eps0, alpha=alpha, default_dir=default_dir, verbose=verbose, seed=seed)
-        self.G = NeuralNetworkGenerator(qm, cont_columns=cont_columns, agg_mapping=agg_mapping, K=K, device=device,
-                                        embedding_dim=embedding_dim, gen_dims=gen_dims, resample=resample,
-                                        )
+        super().__init__(G, qm, T, eps0, alpha=alpha, default_dir=default_dir, verbose=verbose, seed=seed)
 
         self.device = device
         self.queries = torch.tensor(self.qm.queries).to(self.device).long()
@@ -36,10 +25,10 @@ class BaseGEM(IterativeAlgorithmTorch):
         self.loss_p = loss_p
         self.lr = lr
         self.eta_min = eta_min
-        self.ema_beta = ema_beta
         self.max_idxs = max_idxs
         self.max_iters = max_iters
 
+        self.ema_beta = ema_beta
         self.ema_error_factor = ema_error_factor
         self.ema_weights = ema_weights
         self.ema_weights_beta = ema_weights_beta
@@ -61,22 +50,21 @@ class BaseGEM(IterativeAlgorithmTorch):
     def _valid_qm(self):
         return (KWayMarginalQM)
 
+    def _sample(self, scores):
+        scores[self.past_query_idxs] = -np.infty
+        max_query_idx = exponential_mech(scores, self.alpha * self.eps0, self.qm.sensitivity)
+        self.past_query_idxs = torch.cat([self.past_query_idxs, torch.tensor([max_query_idx])])
+        return max_query_idx
+
+    def _measure(self, answers):
+        noisy_answer = gaussian_mech(answers, (1 - self.alpha) * self.eps0, self.qm.sensitivity)
+        noisy_answer = np.clip(noisy_answer, 0, 1)
+        self.past_measurements = torch.cat([self.past_measurements, torch.tensor([noisy_answer])])
+
     def _update_ema_error(self, error):
         if self.ema_error is None:
             self.ema_error = error
         self.ema_error = self.ema_beta * self.ema_error + (1 - self.ema_beta) * error
-
-    def _get_sampled_query_errors(self, idxs=None):
-        q_t_idxs = self.past_query_idxs.clone()
-        real_answers = self.past_measurements.to(self.device)
-        if idxs is not None:
-            q_t_idxs = q_t_idxs[idxs]
-            real_answers = real_answers[idxs]
-
-        syn = self.G.generate()
-        syn_answers = self.G.get_answers(syn, idxs=q_t_idxs)
-        errors = real_answers - syn_answers
-        return errors
 
     def _get_loss(self, idxs):
         errors = self._get_sampled_query_errors(idxs=idxs)
@@ -155,12 +143,6 @@ class BaseGEM(IterativeAlgorithmTorch):
         if self.ema_weights:
             self._ema_weights()
 
-    def get_syndata(self, num_samples=100000):
-        return self.G.get_syndata(num_samples=num_samples)
-
-    def get_answers(self):
-        return self.G.get_qm_answers()
-
     # Inspired by https://arxiv.org/abs/1806.04498
     def _ema_weights(self):
         if self.verbose:
@@ -179,118 +161,58 @@ class BaseGEM(IterativeAlgorithmTorch):
 
         self.G.generator.load_state_dict(weights)
 
-class GEM(BaseGEM):
-    def _sample(self, scores):
-        scores[self.past_query_idxs] = -np.infty
-        max_query_idx = exponential_mech(scores, self.alpha * self.eps0, self.qm.sensitivity)
-        self.past_query_idxs = torch.cat([self.past_query_idxs, torch.tensor([max_query_idx])])
-        return max_query_idx
 
-    def _measure(self, answers):
-        noisy_answer = gaussian_mech(answers, (1 - self.alpha) * self.eps0, self.qm.sensitivity)
-        noisy_answer = np.clip(noisy_answer, 0, 1)
-        self.past_measurements = torch.cat([self.past_measurements, torch.tensor([noisy_answer])])
-
-class GEM_Marginal(BaseGEM):
-    def _sample(self, scores):
-        scores[self.past_query_idxs] = -np.infty
-        scores = list(scores[x[0]:x[1]] for x in list(self.qm.workload_idxs))
-        scores = np.array([x.max() for x in scores]) # get max workload scores
-        max_workload_idx = exponential_mech(scores, self.alpha * self.eps0, self.qm.sensitivity)
-        max_query_idxs = np.arange(*self.qm.workload_idxs[max_workload_idx])
-
-        self.past_workload_idxs = torch.cat([self.past_workload_idxs, torch.tensor([max_workload_idx])])
-        self.past_query_idxs = torch.cat([self.past_query_idxs, torch.tensor(max_query_idxs)])
-        return max_query_idxs
-
-    def _measure(self, answers):
-        noisy_answers = gaussian_mech(answers, (1 - self.alpha) * self.eps0, 2 ** 0.5 * self.qm.sensitivity)
-        noisy_answers = np.clip(noisy_answers, 0, 1)
-        self.past_measurements = torch.cat([self.past_measurements, torch.tensor(noisy_answers)])
-
-class GEM_Nondp(BaseGEM):
-    def __init__(self, qm, T, device, default_dir=None,
-                 cont_columns=[], agg_mapping={},
-                 embedding_dim=128, gen_dims=None, K=500, loss_p=1,
-                 lr=1e-4, eta_min=1e-5, resample=False, ema_error_factor=0.5,
-                 max_idxs=10000, max_iters=1,
-                 verbose=False, seed=None,
-                 ):
-        super().__init__(qm, T, 0, device, default_dir=default_dir,
-                         cont_columns=cont_columns, agg_mapping=agg_mapping,
-                         embedding_dim=embedding_dim, gen_dims=gen_dims, K=K, loss_p=loss_p,
-                         lr=lr, eta_min=eta_min, resample=resample, max_idxs=max_idxs, max_iters=max_iters,
-                         ema_error_factor=ema_error_factor, verbose=verbose, seed=seed)
-
-    def _sample(self, scores):
-        pass
-
-    def _measure(self, answers):
-        pass
-
-    def fit(self, true_answers):
-        self.past_query_idxs = torch.arange(self.qm.num_queries)
-        self.past_measurements = torch.tensor(true_answers)
-
-        syn_answers = self.G.get_qm_answers()
-        errors = np.abs(true_answers - syn_answers)
-
-        pbar = tqdm(range(self.T))
-        for t in pbar:
-            if self.verbose:
-                pbar.set_description("Max Error: {:.6}".format(errors.max()))
-
-            p = errors / errors.sum()
-            # print(self.qm.workloads[self.qm.query_workload_map[errors.argmax()]])
-
-            for _ in range(self.max_iters):
-                self.optimizerG.zero_grad()
-                idxs = np.random.choice(len(true_answers), size=self.max_idxs, p=p, replace=True)
-                loss = self._get_loss(idxs)
-
-                loss.backward()
-                self.optimizerG.step()
-
-            if self.schedulerG is not None:
-                self.schedulerG.step()
-
-            syn_answers = self.G.get_qm_answers()
-            errors = np.abs(true_answers - syn_answers)
-            self.record_errors(true_answers, syn_answers)
-
-            if np.min(self.true_max_errors) == self.true_max_errors[-1]:
-                self.save('best.pkl')
-            self.save('last.pkl')
-
-def get_args():
-    parser = argparse.ArgumentParser()
-
-    # data args
-    parser.add_argument('--dataset', type=str, default='adult')
-    parser.add_argument('--marginal', type=int, default=3)
-    parser.add_argument('--workload', type=int, default=32)
-    parser.add_argument('--workload_seed', type=int, default=0)
-    # privacy args
-    parser.add_argument('--epsilon', type=float, help='Privacy parameter', default=1.0)
-    parser.add_argument('--T', type=int, default=10)
-    parser.add_argument('--alpha', type=float, default=0.5)
-    # general algo args
-    parser.add_argument('--verbose', action='store_true')
-    parser.add_argument('--test_seed', type=int, default=None)
-
-    # GEM specific args
-    parser.add_argument('--dim', type=int, default=512)
-    parser.add_argument('--syndata_size', type=int, default=1000)
-    parser.add_argument('--loss_p', type=int, default=1)
-    parser.add_argument('--lr', type=float, default=1e-4)
-    parser.add_argument('--eta_min', type=float, default=None)
-    parser.add_argument('--max_iters', type=int, default=100)
-    parser.add_argument('--max_idxs', type=int, default=100)
-    parser.add_argument('--resample', action='store_true')
-    parser.add_argument('--ema_weights', action='store_true')
-    parser.add_argument('--ema_weights_beta', type=float, default=0.9)
-
-    args = parser.parse_args()
-
-    print(args)
-    return args
+#
+# class GEM_Nondp(BaseGEM):
+#     def __init__(self, qm, T, device, default_dir=None,
+#                  cont_columns=[], agg_mapping={},
+#                  embedding_dim=128, gen_dims=None, K=500, loss_p=1,
+#                  lr=1e-4, eta_min=1e-5, resample=False, ema_error_factor=0.5,
+#                  max_idxs=10000, max_iters=1,
+#                  verbose=False, seed=None,
+#                  ):
+#         super().__init__(qm, T, 0, device, default_dir=default_dir,
+#                          cont_columns=cont_columns, agg_mapping=agg_mapping,
+#                          embedding_dim=embedding_dim, gen_dims=gen_dims, K=K, loss_p=loss_p,
+#                          lr=lr, eta_min=eta_min, resample=resample, max_idxs=max_idxs, max_iters=max_iters,
+#                          ema_error_factor=ema_error_factor, verbose=verbose, seed=seed)
+#
+#     def _sample(self, scores):
+#         pass
+#
+#     def _measure(self, answers):
+#         pass
+#
+#     def fit(self, true_answers):
+#         self.past_query_idxs = torch.arange(self.qm.num_queries)
+#         self.past_measurements = torch.tensor(true_answers)
+#
+#         syn_answers = self.G.get_qm_answers()
+#         errors = np.abs(true_answers - syn_answers)
+#
+#         pbar = tqdm(range(self.T))
+#         for t in pbar:
+#             if self.verbose:
+#                 pbar.set_description("Max Error: {:.6}".format(errors.max()))
+#
+#             p = errors / errors.sum()
+#             # print(self.qm.workloads[self.qm.query_workload_map[errors.argmax()]])
+#
+#             for _ in range(self.max_iters):
+#                 self.optimizerG.zero_grad()
+#                 idxs = np.random.choice(len(true_answers), size=self.max_idxs, p=p, replace=True)
+#                 loss = self._get_loss(idxs)
+#
+#                 loss.backward()
+#                 self.optimizerG.step()
+#
+#             if self.schedulerG is not None:
+#                 self.schedulerG.step()
+#
+#             syn_answers = self.G.get_qm_answers()
+#             errors = np.abs(true_answers - syn_answers)
+#             self.record_errors(true_answers, syn_answers)
+#
+#             if np.min(self.true_max_errors) == self.true_max_errors[-1]:
+#                 self.save('best.pkl')
+#             self.save('last.pkl')
