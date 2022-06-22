@@ -8,7 +8,7 @@ from qm import KWayMarginalQM
 from algorithms.base.algo import IterativeAlgorithmTorch
 from utils.mechanisms import exponential_mech, gaussian_mech
 
-class IterativeAlgoRAPSoftmax(IterativeAlgorithmTorch):
+class IterAlgoRAPSoftmax(IterativeAlgorithmTorch):
     def __init__(self, G, qm, T, eps0, device,
                  alpha=0.5, default_dir=None, verbose=False, seed=None,
                  samples_per_round=1, lr=1e-4, max_iters=1000, max_idxs=10000):

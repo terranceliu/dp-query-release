@@ -1,5 +1,8 @@
+import os
 import itertools
 import numpy as np
+import pandas as pd
+
 from utils import cdp_rho
 
 def get_per_round_budget_zCDP(epsilon, delta, T, alpha=None):
@@ -52,8 +55,23 @@ def add_row_convert_dtype(array, row, idx):
 
 def get_errors(true_answers, fake_answers):
     errors = np.abs(true_answers - fake_answers)
-    results = {'max': np.max(errors),
-               'mean': np.mean(errors),
-               'mean_squared': np.linalg.norm(errors, ord=2) ** 2 / len(errors),
+    results = {'error_max': np.max(errors),
+               'error_mean': np.mean(errors),
+               'error_mean_squared': np.linalg.norm(errors, ord=2) ** 2 / len(errors),
                }
     return results
+
+def save_results(filename, directory, args, errors):
+    results_dict = vars(args)
+    results_dict.update(errors)
+    df_results = pd.Series(results_dict).to_frame().T
+
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    results_path = os.path.join(directory, filename)
+    if os.path.exists(results_path):
+        df_existing_results = pd.read_csv(results_path)
+        df_results = pd.concat((df_existing_results, df_results))
+
+    df_results.to_csv(results_path, index=False)

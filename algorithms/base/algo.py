@@ -93,9 +93,9 @@ class IterativeAlgorithm(ABC):
 
     def record_errors(self, true_answers, fake_answers):
         errors_dict = get_errors(true_answers, fake_answers)
-        self.true_max_errors.append(errors_dict['max'])
-        self.true_mean_errors.append(errors_dict['mean'])
-        self.true_mean_squared_errors.append(errors_dict['mean_squared'])
+        self.true_max_errors.append(errors_dict['error_max'])
+        self.true_mean_errors.append(errors_dict['error_mean'])
+        self.true_mean_squared_errors.append(errors_dict['error_mean_squared'])
 
     """
     Returns tuple of valid QueryManager classes

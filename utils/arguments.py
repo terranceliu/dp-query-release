@@ -21,6 +21,10 @@ def get_args(base, iterative, public=False):
     parser.add_argument('--eta_min', type=float, default=None)
     parser.add_argument('--max_iters', type=int, default=100)
     parser.add_argument('--max_idxs', type=int, default=100)
+    # misc
+    parser.add_argument('--num_samples', type=int, default=100000)
+
+
 
     if base == 'nn':
         parser.add_argument('--K', type=int, default=1000)

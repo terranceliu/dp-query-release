@@ -10,7 +10,7 @@ from algorithms.base.algo import IterativeAlgorithmTorch
 class IterativeAlgoNonDP(IterativeAlgorithmTorch):
     def __init__(self, G, qm, T, device,
                  default_dir=None, verbose=False, seed=None,
-                 loss_p=1, lr=1e-4, eta_min=1e-5, max_idxs=10000, max_iters=1,
+                 loss_p=2, lr=1e-4, eta_min=1e-5, max_idxs=10000, max_iters=1,
                  ):
         super().__init__(G, qm, T, eps0=0, alpha=0, default_dir=default_dir, verbose=verbose, seed=seed)
 

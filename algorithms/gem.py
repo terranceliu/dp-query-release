@@ -8,7 +8,7 @@ from qm import KWayMarginalQM
 from algorithms.base.algo import IterativeAlgorithmTorch
 from utils.mechanisms import exponential_mech, gaussian_mech
 
-class IterativeAlgoGEM(IterativeAlgorithmTorch):
+class IterAlgoGEM(IterativeAlgorithmTorch):
     def __init__(self, G, qm, T, eps0, device,
                  alpha=0.5, default_dir=None, verbose=False, seed=None,
                  loss_p=1, lr=1e-4, eta_min=1e-5, max_idxs=100, max_iters=100,

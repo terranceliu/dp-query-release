@@ -3,10 +3,10 @@ import torch
 from qm import KWayMarginalQM
 from utils.arguments import get_args
 from utils.utils_data import get_data, get_rand_workloads, get_default_cols
-from utils.utils_general import get_errors, get_per_round_budget_zCDP
+from utils.utils_general import get_per_round_budget_zCDP, get_errors, save_results
 
 from algorithms.base.generator import NeuralNetworkGenerator
-from algorithms.gem import IterativeAlgoGEM
+from algorithms.gem import IterAlgoGEM
 
 args = get_args(base='nn', iterative='gem')
 
@@ -27,17 +27,18 @@ model_save_dir = './save/GEM/{}/{}_{}_{}/{}_{}_{}_{}_{}/'.format(args.dataset,
 
 G = NeuralNetworkGenerator(query_manager, K=args.K, device=device, init_seed=args.test_seed,
                            embedding_dim=args.dim, gen_dims=None, resample=args.resample)
-algo = IterativeAlgoGEM(G, query_manager, args.T, eps0, device,
-                        alpha=args.alpha, default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
-                        loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min,
-                        max_idxs=args.max_idxs, max_iters=args.max_iters,
-                        ema_weights=args.ema_weights, ema_weights_beta=args.ema_weights_beta)
+algo = IterAlgoGEM(G, query_manager, args.T, eps0, device,
+                   alpha=args.alpha, default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
+                   loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min,
+                   max_idxs=args.max_idxs, max_iters=args.max_iters,
+                   ema_weights=args.ema_weights, ema_weights_beta=args.ema_weights_beta)
 
 true_answers = query_manager.get_answers(data)
 algo.fit(true_answers)
 
-syndata = algo.get_syndata()
+syndata = algo.get_syndata(args.num_samples)
 syndata_answers = query_manager.get_answers(syndata)
 errors = get_errors(true_answers, syndata_answers)
-
 print(errors)
+
+save_results("gem.csv", './results', args, errors)

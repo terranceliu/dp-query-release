@@ -2,10 +2,10 @@ import torch
 import numpy as np
 
 from utils.mechanisms import exponential_mech, gaussian_mech
-from algorithms.gem import IterativeAlgoGEM as IterativeAlgoGEMBase
-from algorithms.rap_softmax import IterativeAlgoRAPSoftmax as IterativeAlgoRAPSoftmaxBase
+from algorithms.gem import IterAlgoGEM as IterAlgoGEMBase
+from algorithms.rap_softmax import IterAlgoRAPSoftmax as IterAlgoRAPSoftmaxBase
 
-class IterativeAlgoGEM(IterativeAlgoGEMBase):
+class IterAlgoGEM(IterAlgoGEMBase):
     def _sample(self, scores):
         scores[self.past_query_idxs] = -np.infty
         scores = list(scores[x[0]:x[1]] for x in list(self.qm.workload_idxs))
@@ -22,7 +22,7 @@ class IterativeAlgoGEM(IterativeAlgoGEMBase):
         noisy_answers = np.clip(noisy_answers, 0, 1)
         self.past_measurements = torch.cat([self.past_measurements, torch.tensor(noisy_answers)])
 
-class IterativeAlgoRAPSoftmax(IterativeAlgoRAPSoftmaxBase):
+class IterAlgoRAPSoftmax(IterAlgoRAPSoftmaxBase):
     def _sample(self, scores):
         scores[self.past_query_idxs] = -np.infty
         scores = list(scores[x[0]:x[1]] for x in list(self.qm.workload_idxs))
