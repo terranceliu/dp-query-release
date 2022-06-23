@@ -35,6 +35,12 @@ class QueryManager(ABC):
         for i, (start, end) in enumerate(self.workload_idxs):
             self.query_workload_map[start:end] = i
 
+    def regroup_answers_by_workload(self, ans):
+        ans_by_workload = []
+        for idxs in self.workload_idxs:
+            ans_by_workload.append(ans[idxs[0]: idxs[1]])
+        return ans_by_workload
+
     @abstractmethod
     def _setup_queries(self):
         pass
@@ -175,6 +181,8 @@ class KWayMarginalQMTorch(KWayMarginalQM):
 
         if density:
             answers = answers / weights.sum()
+        if by_workload:
+            answers = self.regroup_answers_by_workload(answers)
         return answers
 
 """
