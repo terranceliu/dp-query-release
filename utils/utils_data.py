@@ -86,8 +86,7 @@ def get_data(name, root_path='./datasets/', cols=None):
     domain = Domain(config.keys(), config.values())
 
     # for saving memory
-    domain_max = max(domain.config.values())
-    dtype = get_min_dtype(domain_max)
+    dtype = get_min_dtype(sum(domain.config.values()))
     df = df.astype(dtype)
 
     data = Dataset(df, domain)

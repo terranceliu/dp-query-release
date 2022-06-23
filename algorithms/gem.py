@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 from torch import optim
 
-from qm import KWayMarginalQM
+from qm import KWayMarginalQMTorch
 from algorithms.base.algo import IterativeAlgorithmTorch
 from utils.mechanisms import exponential_mech, gaussian_mech
 
@@ -16,10 +16,10 @@ class IterAlgoGEM(IterativeAlgorithmTorch):
                  ema_weights=True, ema_weights_beta=0.9,
                  save_interval=10, save_num=None,
                  ):
-        super().__init__(G, qm, T, eps0, alpha=alpha, default_dir=default_dir, verbose=verbose, seed=seed)
+        super().__init__(G, qm, T, eps0, device=device, alpha=alpha,
+                         default_dir=default_dir, verbose=verbose, seed=seed)
 
-        self.device = device
-        self.queries = torch.tensor(self.qm.queries).to(self.device).long()
+        self.queries = self.qm.queries
 
         # learning parameters
         self.loss_p = loss_p
@@ -48,18 +48,18 @@ class IterAlgoGEM(IterativeAlgorithmTorch):
             self.schedulerG = optim.lr_scheduler.CosineAnnealingLR(self.optimizerG, self.T, eta_min=self.eta_min)
 
     def _valid_qm(self):
-        return (KWayMarginalQM)
+        return (KWayMarginalQMTorch)
 
     def _sample(self, scores):
         scores[self.past_query_idxs] = -np.infty
         max_query_idx = exponential_mech(scores, self.alpha * self.eps0, self.qm.sensitivity)
-        self.past_query_idxs = torch.cat([self.past_query_idxs, torch.tensor([max_query_idx])])
+        self.past_query_idxs = torch.cat([self.past_query_idxs, max_query_idx])
         return max_query_idx
 
     def _measure(self, answers):
         noisy_answer = gaussian_mech(answers, (1 - self.alpha) * self.eps0, self.qm.sensitivity)
-        noisy_answer = np.clip(noisy_answer, 0, 1)
-        self.past_measurements = torch.cat([self.past_measurements, torch.tensor([noisy_answer])])
+        noisy_answer = torch.clip(noisy_answer, 0, 1)
+        self.past_measurements = torch.cat([self.past_measurements, torch.tensor([noisy_answer], device=self.device)])
 
     def _update_ema_error(self, error):
         if self.ema_error is None:
@@ -105,10 +105,11 @@ class IterAlgoGEM(IterativeAlgorithmTorch):
         return loss, step
 
     def fit(self, true_answers):
+        print("Fitting to query answers...")
         self.optimizerG.step() # just to avoid warning
 
         syn_answers = self.G.get_qm_answers()
-        scores = np.abs(true_answers - syn_answers)
+        scores = (true_answers - syn_answers).abs()
 
         pbar = tqdm(range(self.T))
         for t in pbar:
@@ -128,7 +129,7 @@ class IterAlgoGEM(IterativeAlgorithmTorch):
             loss, step = self._optimize_past_queries()
 
             syn_answers = self.G.get_qm_answers()
-            scores = np.abs(true_answers - syn_answers)
+            scores = (true_answers - syn_answers).abs()
             self.record_errors(true_answers, syn_answers)
 
             if ((t + 1) % self.save_interval == 0) or (t + 1 > self.T - self.save_num):

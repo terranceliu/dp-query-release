@@ -140,15 +140,16 @@ class IterativeAlgorithm(ABC):
 
 class IterativeAlgorithmTorch(IterativeAlgorithm):
     def __init__(self, G, qm, T, eps0,
-                 alpha=0.5, default_dir=None, verbose=False, seed=None):
+                 device=None, alpha=0.5, default_dir=None, verbose=False, seed=None):
         super().__init__(qm, T, eps0,
                          alpha=alpha, default_dir=default_dir, verbose=verbose, seed=seed)
         self.G = G
+        self.device = torch.device("cpu") if device is None else device
 
         # convert these lists into tensors for Pytorch code
-        self.past_workload_idxs = torch.tensor([]).long() # only used for sensitivity trick implementations
-        self.past_query_idxs = torch.tensor([]).long()
-        self.past_measurements = torch.tensor([])
+        self.past_workload_idxs = torch.tensor([], device=self.device).long() # only used for sensitivity trick implementations
+        self.past_query_idxs = torch.tensor([], device=self.device).long()
+        self.past_measurements = torch.tensor([], device=self.device)
 
     def _set_seed(self):
         super()._set_seed()

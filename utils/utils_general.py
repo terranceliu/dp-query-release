@@ -1,4 +1,5 @@
 import os
+import torch
 import itertools
 import numpy as np
 import pandas as pd
@@ -53,12 +54,42 @@ def add_row_convert_dtype(array, row, idx):
     array[idx, :len(row)] = row
     return array
 
+def get_data_onehot(data):
+    df_data = data.df.copy()
+    dim = np.sum(data.domain.shape)
+
+    i = 0
+    for attr in data.domain.attrs:
+        df_data.loc[df_data[attr] >= 0, attr] += + i # ignore -1
+        i += data.domain[attr]
+    data_values = df_data.values
+
+    data_onehot = np.zeros((len(data_values), dim))
+    arange = np.arange(len(data_values))
+    arange = np.tile(arange, (data_values.shape[1], 1)).T
+
+    assert (data_values[data_values < 0] == -1).all()
+    x = np.tile(data_values[:, 0] + 1, (data_values.shape[-1], 1)).T
+    x[data_values != -1] = 0
+    data_values += x
+
+    data_onehot[arange, data_values] = 1
+
+    return data_onehot.astype(bool)
+
 def get_errors(true_answers, fake_answers):
-    errors = np.abs(true_answers - fake_answers)
-    results = {'error_max': np.max(errors),
-               'error_mean': np.mean(errors),
-               'error_mean_squared': np.linalg.norm(errors, ord=2) ** 2 / len(errors),
-               }
+    if torch.is_tensor(true_answers):
+        errors = (true_answers - fake_answers).abs()
+        results = {'error_max': errors.max().item(),
+                   'error_mean': errors.mean().item(),
+                   'error_mean_squared': torch.linalg.norm(errors, ord=2).item() ** 2 / len(errors),
+                   }
+    else:
+        errors = np.abs(true_answers - fake_answers)
+        results = {'error_max': np.max(errors),
+                   'error_mean': np.mean(errors),
+                   'error_mean_squared': np.linalg.norm(errors, ord=2) ** 2 / len(errors),
+                   }
     return results
 
 def save_results(filename, directory, args, errors):

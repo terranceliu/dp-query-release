@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from scipy.special import softmax
 
 """
 Privacy mechanisms
@@ -18,9 +19,14 @@ def exponential_mech(scores, eps0, sensitivity):
         idxs = idxs[scores != -np.infty]
         return np.random.choice(idxs)
 
-    EM_dist = np.exp(2 * eps0 * scores / (2 * sensitivity), dtype=np.float128)
-    EM_dist = EM_dist / EM_dist.sum()
-    max_query_idx = sample(EM_dist)
+    if torch.is_tensor(scores):
+        EM_dist = torch.softmax(2 * eps0 * scores / (2 * sensitivity), dim=-1)
+        cumulative_dist = EM_dist.cumsum(-1)
+        max_query_idx = torch.searchsorted(cumulative_dist, torch.rand(1, device=cumulative_dist.device))
+    else:
+        EM_dist = softmax(2 * eps0 * scores / (2 * sensitivity))
+        cumulative_dist = np.cumsum(EM_dist)
+        max_query_idx = np.searchsorted(cumulative_dist, np.random.rand())
     return max_query_idx
 
 def report_noisy_max(input, eps0, sensitivity):
@@ -33,7 +39,11 @@ def gaussian_mech(true_val, eps0, sensitivity):
         size = true_val.shape
     except:
         size = 1
-    noise = np.random.normal(loc=0, scale=sensitivity / eps0, size=size)
+
+    if torch.is_tensor(true_val):
+        noise = torch.normal(0, sensitivity / eps0, size=size, device=true_val.device)
+    else:
+        noise = np.random.normal(loc=0, scale=sensitivity / eps0, size=size)
     return true_val + noise
 
 def laplace_mech(input, eps0, sensitivity):

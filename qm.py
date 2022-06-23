@@ -1,6 +1,7 @@
 import os
 import copy
 import math
+import torch
 import itertools
 import numpy as np
 import pandas as pd
@@ -10,7 +11,7 @@ from abc import ABC, abstractmethod
 
 from utils.utils_data import Dataset
 from utils.utils_qm import get_xy_nbin, histogramdd
-from utils.utils_general import get_num_queries, get_min_dtype, add_row_convert_dtype
+from utils.utils_general import get_num_queries, get_min_dtype, add_row_convert_dtype, get_data_onehot
 
 """
 Query manager base class
@@ -73,7 +74,7 @@ class BaseKWayMarginalQM(QueryManager):
                 self.pos_col_map[pos] = (col, attr_val)
 
     def _setup_queries(self):
-        print("Initializing self.queries...")
+        print("Setting up queries...")
 
         # Add flag variable for type of query - currently implemented with integer flags
         self._setup_maps()
@@ -81,7 +82,7 @@ class BaseKWayMarginalQM(QueryManager):
         self.queries = -1 * np.ones((self.num_queries, max_marginal), dtype=get_min_dtype([self.dim]))
 
         idx = 0
-        for feat in tqdm(self.workloads):
+        for feat in self.workloads:
             positions = []
             for col in feat:
                 i = self.col_map[col]
@@ -117,7 +118,6 @@ class BaseKWayMarginalQM(QueryManager):
 
         return query_mask
 
-
 """
 K-way marginal query manager
 """
@@ -149,6 +149,33 @@ class KWayMarginalQM(BaseKWayMarginalQM):
             W = W.reshape(1, -1)
 
         return W
+
+class KWayMarginalQMTorch(KWayMarginalQM):
+    def __init__(self, data, workloads, sensitivity=None, device=None):
+        super().__init__(data, workloads, sensitivity=sensitivity)
+        self.device = torch.device("cpu") if device is None else device
+        self.queries = torch.tensor(self.queries).long().to(self.device)
+
+    # Currently (torch=1.11.0), torch.histogramdd doesn't support CUDA operations (rewrite below if support is added)
+    def get_answers(self, data, weights=None, by_workload=False, density=True, batch_size=1000):
+        print('Calculating answers...')
+        if weights is None:
+            weights = np.ones(len(data))
+        weights = torch.tensor(weights).unsqueeze(-1).to(self.device)
+
+        data_onehot = torch.tensor(get_data_onehot(data)).to(self.device)
+        answers = []
+        for _queries in torch.split(self.queries, batch_size):
+            x = data_onehot[:, _queries]
+            x = x.all(axis=-1)
+            x = x * weights
+            x = x.sum(0)
+            answers.append(x)
+        answers = torch.cat(answers)
+
+        if density:
+            answers = answers / weights.sum()
+        return answers
 
 """
 K-way marginal query manager

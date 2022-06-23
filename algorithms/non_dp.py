@@ -12,10 +12,10 @@ class IterativeAlgoNonDP(IterativeAlgorithmTorch):
                  default_dir=None, verbose=False, seed=None,
                  loss_p=2, lr=1e-4, eta_min=1e-5, max_idxs=10000, max_iters=1,
                  ):
-        super().__init__(G, qm, T, eps0=0, alpha=0, default_dir=default_dir, verbose=verbose, seed=seed)
+        super().__init__(G, qm, T, eps0=0, device=device, alpha=0,
+                         default_dir=default_dir, verbose=verbose, seed=seed)
 
-        self.device = device
-        self.queries = torch.tensor(self.qm.queries).to(self.device).long()
+        self.queries = self.qm.queries
 
         self.loss_p = loss_p
         self.lr = lr
@@ -43,11 +43,12 @@ class IterativeAlgoNonDP(IterativeAlgorithmTorch):
         return loss
 
     def fit(self, true_answers):
+        print("Fitting to query answers...")
         self.past_query_idxs = torch.arange(self.qm.num_queries)
-        self.past_measurements = torch.tensor(true_answers)
+        self.past_measurements = true_answers.clone()
 
         syn_answers = self.G.get_qm_answers()
-        errors = np.abs(true_answers - syn_answers)
+        errors = (true_answers - syn_answers).abs()
 
         pbar = tqdm(range(self.T))
         for t in pbar:
@@ -57,7 +58,7 @@ class IterativeAlgoNonDP(IterativeAlgorithmTorch):
             p = errors / errors.sum()
             for _ in range(self.max_iters):
                 self.optimizerG.zero_grad()
-                idxs = np.random.choice(len(true_answers), size=self.max_idxs, p=p, replace=True)
+                idxs = torch.multinomial(p, num_samples=self.max_idxs, replacement=True)
                 loss = self._get_loss(idxs)
 
                 loss.backward()
@@ -67,7 +68,7 @@ class IterativeAlgoNonDP(IterativeAlgorithmTorch):
                 self.schedulerG.step()
 
             syn_answers = self.G.get_qm_answers()
-            errors = np.abs(true_answers - syn_answers)
+            errors = (true_answers - syn_answers).abs()
             self.record_errors(true_answers, syn_answers)
 
             if np.min(self.true_max_errors) == self.true_max_errors[-1]:

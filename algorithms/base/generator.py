@@ -63,7 +63,7 @@ class Generator(ABC):
         self.device = device
         self.init_seed = init_seed
 
-        self.queries = torch.tensor(self.qm.queries).to(self.device).long()
+        self.queries = self.qm.queries
         self.domain = self.qm.domain
         self.cont_columns = cont_columns
         self.discrete_columns = [col for col in self.domain.attrs if col not in self.cont_columns]
@@ -130,7 +130,7 @@ class Generator(ABC):
     def get_qm_answers(self):
         syn = self.generate().detach()
         answers = self.get_answers(syn)
-        return answers.cpu().numpy()
+        return answers
 
     def _get_onehot(self, data):
         data_t = []

@@ -1,6 +1,6 @@
 import torch
 
-from qm import KWayMarginalQM
+from qm import KWayMarginalQMTorch
 from utils.arguments import get_args
 from utils.utils_data import get_data, get_rand_workloads, get_default_cols
 from utils.utils_general import get_per_round_budget_zCDP, get_errors, save_results
@@ -8,18 +8,19 @@ from utils.utils_general import get_per_round_budget_zCDP, get_errors, save_resu
 from algorithms.base.generator import NeuralNetworkGenerator
 from algorithms.marginal_sensitivity import IterAlgoGEM
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 args = get_args(base='nn', iterative='gem')
 
 data = get_data(args.dataset)
 data = data.project(get_default_cols(args.dataset))
 workloads = get_rand_workloads(data, args.workload, args.marginal, seed=args.workload_seed)
 
-query_manager = KWayMarginalQM(data, workloads)
+query_manager = KWayMarginalQMTorch(data, workloads, device=device)
 
 delta = 1.0 / len(data) ** 2
 eps0, rho = get_per_round_budget_zCDP(args.epsilon, delta, args.T, alpha=args.alpha)
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model_save_dir = './save/GEM/{}/{}_{}_{}/{}_{}_{}_{}_{}/'.format(args.dataset,
                                                                  args.marginal, args.workload, args.workload_seed,
                                                                  args.epsilon, args.T, args.alpha,
@@ -32,7 +33,6 @@ algo = IterAlgoGEM(G, query_manager, args.T, eps0, device,
                    loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min,
                    max_idxs=args.max_idxs, max_iters=args.max_iters,
                    ema_weights=args.ema_weights, ema_weights_beta=args.ema_weights_beta)
-
 true_answers = query_manager.get_answers(data)
 algo.fit(true_answers)
 
