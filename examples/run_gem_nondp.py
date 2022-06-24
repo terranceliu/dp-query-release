@@ -1,8 +1,8 @@
 import torch
 
-from qm import KWayMarginalQMTorch
+from qm import KWayMarginalQM
 from utils.arguments import get_args
-from utils.utils_data import get_data, get_rand_workloads, get_default_cols
+from utils.utils_data import get_data, get_rand_workloads
 
 from algorithms.base.generator import NeuralNetworkGenerator
 from algorithms.non_dp import IterativeAlgoNonDP
@@ -12,10 +12,10 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 args = get_args('nn', 'non_dp')
 
 data = get_data(args.dataset)
-data = data.project(get_default_cols(args.dataset))
+
 workloads = get_rand_workloads(data, args.workload, args.marginal, seed=args.workload_seed)
 
-query_manager = KWayMarginalQMTorch(data, workloads, device=device)
+query_manager = KWayMarginalQM(data, workloads, device=device)
 
 model_save_dir = './save/GEM_Nondp/{}/{}_{}_{}/{}_{}_{}/'.format(args.dataset,
                                                                  args.marginal, args.workload, args.workload_seed,

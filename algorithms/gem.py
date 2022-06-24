@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 from torch import optim
 
-from qm import KWayMarginalQMTorch
+from qm import KWayMarginalQM
 from algorithms.base.algo import IterativeAlgorithmTorch
 from utils.mechanisms import exponential_mech, gaussian_mech
 
@@ -48,7 +48,7 @@ class IterAlgoGEM(IterativeAlgorithmTorch):
             self.schedulerG = optim.lr_scheduler.CosineAnnealingLR(self.optimizerG, self.T, eta_min=self.eta_min)
 
     def _valid_qm(self):
-        return (KWayMarginalQMTorch)
+        return (KWayMarginalQM)
 
     def _sample(self, scores):
         scores[self.past_query_idxs] = -np.infty

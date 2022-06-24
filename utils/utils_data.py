@@ -22,7 +22,7 @@ def get_default_cols(dataset):
                 'last_credit_pull_d', 'debt_settlement_flag', 'debt_settlement_flag_date', 'settlement_status',
                 'settlement_date']
     elif dataset.startswith('adult'):
-        if dataset.endswith('-small'):
+        if dataset.endswith('-reduced'):
             cols = ['sex', 'income>50K', 'race', 'marital-status',
                     'occupation', 'education-num',
                     'age_10'
@@ -34,7 +34,7 @@ def get_default_cols(dataset):
                     'age_10'
                     ]
     elif dataset.startswith('acs'):
-        if dataset.endswith('-small'):
+        if dataset.endswith('-reduced'):
             # for reference
             ##############
             proj2 = ['SEX', 'FOODSTMP'
@@ -77,7 +77,7 @@ def get_default_cols(dataset):
 
     return cols
 
-def get_data(name, root_path='./datasets/', cols=None):
+def get_data(name, root_path='./datasets/', cols='default'):
     df_path = os.path.join(root_path, "{}.csv".format(name))
     df = pd.read_csv(df_path)
 

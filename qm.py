@@ -5,7 +5,6 @@ import torch
 import itertools
 import numpy as np
 import pandas as pd
-from collections.abc import Iterable
 from tqdm import tqdm
 from abc import ABC, abstractmethod
 
@@ -17,14 +16,15 @@ from utils.utils_general import get_num_queries, get_min_dtype, add_row_convert_
 Query manager base class
 """
 class QueryManager(ABC):
-    def __init__(self, data, workloads, sensitivity=None):
+    def __init__(self, data, workloads, sensitivity=None, device=None):
         self.domain = data.domain
         self.workloads = workloads
         self.sensitivity = sensitivity
+        self.device = torch.device("cpu") if device is None else device
 
         self.dim = np.sum(self.domain.shape)
         self.num_queries, self.workload_lens = get_num_queries(self.domain, self.workloads, return_workload_lens=True)
-        self.queries = self._setup_queries()
+        self._setup_queries()
 
         workload_lens = self.workload_lens.copy()
         workload_lens.insert(0, 0)
@@ -53,8 +53,8 @@ class QueryManager(ABC):
 Base K-way marginal query manager class
 """
 class BaseKWayMarginalQM(QueryManager):
-    def __init__(self, data, workloads, sensitivity=None):
-        super().__init__(data, workloads, sensitivity=sensitivity)
+    def __init__(self, data, workloads, sensitivity=None, device=None):
+        super().__init__(data, workloads, sensitivity=sensitivity, device=device)
         if sensitivity is None:
             self.sensitivity = 1 / len(data)
 
@@ -82,7 +82,6 @@ class BaseKWayMarginalQM(QueryManager):
     def _setup_queries(self):
         print("Setting up queries...")
 
-        # Add flag variable for type of query - currently implemented with integer flags
         self._setup_maps()
         max_marginal = np.array([len(x) for x in self.workloads]).max()
         self.queries = -1 * np.ones((self.num_queries, max_marginal), dtype=get_min_dtype([self.dim]))
@@ -98,7 +97,7 @@ class BaseKWayMarginalQM(QueryManager):
             self.queries[idx:idx + x.shape[0], :x.shape[1]] = x
             idx += x.shape[0]
 
-        return self.queries
+        self.queries = torch.tensor(self.queries).long().to(self.device)
 
     def filter_query_workloads(self, workload_mask):
         self.workloads = np.array(self.workloads)[workload_mask].tolist()
@@ -128,42 +127,8 @@ class BaseKWayMarginalQM(QueryManager):
 K-way marginal query manager
 """
 class KWayMarginalQM(BaseKWayMarginalQM):
-    def get_answers(self, data, weights=None, by_workload=False, density=True):
-        ans_vec = []
-        for proj in tqdm(self.workloads):
-            x = data.project(proj).datavector(weights=weights, density=density)
-            ans_vec.append(x)
-
-        if not by_workload:
-            return np.concatenate(ans_vec)
-        return ans_vec
-
-    def get_query_onehot(self, q_ids):
-        if not isinstance(q_ids, Iterable):
-            q_ids = [q_ids]
-
-        W = []
-        for q_id in q_ids:
-            w = np.zeros(self.dim)
-            for p in self.queries[q_id]:
-                if p < 0:  # TODO: multiple values of k
-                    break
-                w[p] = 1
-            W.append(w)
-        W = np.array(W)
-        if len(W) == 1:
-            W = W.reshape(1, -1)
-
-        return W
-
-class KWayMarginalQMTorch(KWayMarginalQM):
-    def __init__(self, data, workloads, sensitivity=None, device=None):
-        super().__init__(data, workloads, sensitivity=sensitivity)
-        self.device = torch.device("cpu") if device is None else device
-        self.queries = torch.tensor(self.queries).long().to(self.device)
-
-    # Currently (torch=1.11.0), torch.histogramdd doesn't support CUDA operations (rewrite below if support is added)
-    def get_answers(self, data, weights=None, by_workload=False, density=True, batch_size=1000):
+    # Currently (torch=1.11.0), torch.histogramdd doesn't support CUDA operations (remove if support is added in the future)
+    def _get_answers_cuda(self, data, weights=None, by_workload=False, density=True, batch_size=1000):
         print('Calculating answers...')
         if weights is None:
             weights = np.ones(len(data))
@@ -185,11 +150,85 @@ class KWayMarginalQMTorch(KWayMarginalQM):
             answers = self.regroup_answers_by_workload(answers)
         return answers
 
+    # it is faster to call torch.histogramdd when not using CUDA
+    def _get_answers_cpu(self, data, weights=None, by_workload=False, density=True):
+        answers = []
+        for proj in tqdm(self.workloads):
+            data_proj = data.project(proj)
+            vals = torch.tensor(data_proj.df.values, device=self.device, dtype=torch.float)
+            bins = [torch.arange(n + 1, device=self.device, dtype=torch.float) for n in data_proj.domain.shape]
+            x = torch.histogramdd(vals, bins, weight=weights, density=density)[0]
+            x = x.flatten()
+            answers.append(x)
+
+        if not by_workload:
+            answers = torch.cat(answers)
+        return answers
+
+    def get_answers(self, data, weights=None, by_workload=False, density=True, batch_size=1000):
+        if self.device.type == 'cpu':
+            answers = self._get_answers_cpu(data, weights=weights, by_workload=by_workload, density=density)
+        else:
+            answers = self._get_answers_cuda(data, weights=weights, by_workload=by_workload,
+                                             density=density, batch_size=batch_size)
+        return answers
+
 """
 K-way marginal query manager
 To be used with algorithms that maintain a distribution over the support (MWEM, PMW^Pub, PEP, etc.)
 """
 class KWayMarginalSupportQM(KWayMarginalQM):
+    def __init__(self, data, workloads, sensitivity=None, device=None,
+                 cache_dir=None, overwrite_cache=True):
+        super().__init__(data, workloads, sensitivity=sensitivity, device=device)
+        self.data_support = self.get_support(data)
+        self.cache_dir = cache_dir
+        self.overwrite_cache = overwrite_cache
+
+        if cache_dir is not None:
+            if not os.path.exists(cache_dir):
+                os.makedirs(cache_dir)
+            self.path_xy = os.path.join(cache_dir, "xy.npy")
+            self.path_nbin = os.path.join(cache_dir, "nbin.npy")
+        # self._setup_xy_nbin()
+
+    def get_support(self, data):
+        df_support = []
+        for val in list(data.domain.config.values()):
+            df_support.append(np.arange(val))
+        df_support = list(itertools.product(*df_support))
+        df_support = np.array(df_support)
+        df_support = pd.DataFrame(df_support, columns=data.df.columns)
+        data_support = Dataset(df_support, data.domain)
+
+        return data_support
+
+    def convert_to_support_distr(self, data):
+        cols = list(data.df.columns)
+        new_df = data.df.groupby(cols).size().reset_index(name='Count')
+        new_df = pd.merge(self.data_support.df, new_df, how='left', left_on=list(data.domain),
+                          right_on=list(data.domain))
+        new_df.replace(np.nan, 0)
+        A_real = new_df['Count'].values
+        A_real = np.nan_to_num(A_real, nan=0)
+        A_real = A_real / A_real.sum()
+
+        return A_real
+
+    def get_answers(self, data, weights=None, by_workload=False, density=True, batch_size=1000):
+        answers = super().get_answers(self.data_support, weights=weights, by_workload=by_workload,
+                                      density=density, batch_size=batch_size)
+        return answers
+
+
+
+
+
+"""
+K-way marginal query manager
+To be used with algorithms that maintain a distribution over the support (MWEM, PMW^Pub, PEP, etc.)
+"""
+class OldKWayMarginalSupportQM(KWayMarginalQM):
     def __init__(self, data, workloads, sensitivity=None,
                  cache_dir=None, overwrite_cache=True):
         super().__init__(data, workloads, sensitivity)
