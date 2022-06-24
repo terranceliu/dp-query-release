@@ -4,7 +4,7 @@ from qm import KWayMarginalQMTorch
 from utils.arguments import get_args
 from utils.utils_data import get_data, get_rand_workloads
 
-from algorithms.base.generator import NeuralNetworkGenerator
+from algorithms.syndata.generator import NeuralNetworkGenerator
 from algorithms.non_dp import IterativeAlgoNonDP
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

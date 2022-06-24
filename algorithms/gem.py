@@ -5,10 +5,10 @@ from tqdm import tqdm
 from torch import optim
 
 from qm import KWayMarginalQM
-from algorithms.base.algo import IterativeAlgorithmTorch
+from algorithms.algo import IterativeAlgorithmTorch
 from utils.mechanisms import exponential_mech, gaussian_mech
 
-class IterAlgoGEM(IterativeAlgorithmTorch):
+class IterAlgoGEMBase(IterativeAlgorithmTorch):
     def __init__(self, G, qm, T, eps0, device,
                  alpha=0.5, default_dir=None, verbose=False, seed=None,
                  loss_p=1, lr=1e-4, eta_min=1e-5, max_idxs=100, max_iters=100,
@@ -46,17 +46,6 @@ class IterAlgoGEM(IterativeAlgorithmTorch):
 
     def _valid_qm(self):
         return (KWayMarginalQM)
-
-    def _sample(self, scores):
-        scores[self.past_query_idxs] = -np.infty
-        max_query_idx = exponential_mech(scores, self.alpha * self.eps0, self.qm.sensitivity)
-        self.past_query_idxs = torch.cat([self.past_query_idxs, max_query_idx])
-        return max_query_idx
-
-    def _measure(self, answers):
-        noisy_answer = gaussian_mech(answers, (1 - self.alpha) * self.eps0, self.qm.sensitivity)
-        noisy_answer = torch.clip(noisy_answer, 0, 1)
-        self.past_measurements = torch.cat([self.past_measurements, torch.tensor([noisy_answer], device=self.device)])
 
     def _update_ema_error(self, error):
         if self.ema_error is None:
@@ -158,3 +147,32 @@ class IterAlgoGEM(IterativeAlgorithmTorch):
                     weights[key] = self.ema_weights_beta * weights[key] + (1 - self.ema_weights_beta) * w[key]
 
         self.G.generator.load_state_dict(weights)
+
+class IterAlgoGEM(IterAlgoGEMBase):
+    def _sample(self, scores):
+        scores[self.past_query_idxs] = -np.infty
+        scores = list(scores[x[0]:x[1]] for x in list(self.qm.workload_idxs))
+        scores = np.array([x.max().item() for x in scores])
+        max_workload_idx = exponential_mech(scores, self.alpha * self.eps0, self.qm.sensitivity)
+        max_query_idxs = torch.arange(*self.qm.workload_idxs[max_workload_idx], device=self.device)
+
+        self.past_workload_idxs = torch.cat([self.past_workload_idxs, torch.tensor([max_workload_idx], device=self.device)])
+        self.past_query_idxs = torch.cat([self.past_query_idxs, max_query_idxs])
+        return max_query_idxs
+
+    def _measure(self, answers):
+        noisy_answers = gaussian_mech(answers, (1 - self.alpha) * self.eps0, 2 ** 0.5 * self.qm.sensitivity)
+        noisy_answers = torch.clip(noisy_answers, 0, 1)
+        self.past_measurements = torch.cat([self.past_measurements, noisy_answers])
+
+class IterAlgoSingleGEM(IterAlgoGEMBase):
+    def _sample(self, scores):
+        scores[self.past_query_idxs] = -np.infty
+        max_query_idx = exponential_mech(scores, self.alpha * self.eps0, self.qm.sensitivity)
+        self.past_query_idxs = torch.cat([self.past_query_idxs, max_query_idx])
+        return max_query_idx
+
+    def _measure(self, answers):
+        noisy_answer = gaussian_mech(answers, (1 - self.alpha) * self.eps0, self.qm.sensitivity)
+        noisy_answer = torch.clip(noisy_answer, 0, 1)
+        self.past_measurements = torch.cat([self.past_measurements, torch.tensor([noisy_answer], device=self.device)])

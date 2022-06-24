@@ -5,7 +5,7 @@ from utils.arguments import get_args
 from utils.utils_data import get_data, get_rand_workloads
 from utils.utils_general import get_per_round_budget_zCDP, get_errors, save_results
 
-from algorithms.base.generator import NeuralNetworkGenerator
+from algorithms.syndata.generator import NeuralNetworkGenerator
 from algorithms.gem import IterAlgoGEM
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -33,7 +33,6 @@ algo = IterAlgoGEM(G, query_manager, args.T, eps0, device,
                    loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min,
                    max_idxs=args.max_idxs, max_iters=args.max_iters,
                    ema_weights=args.ema_weights, ema_weights_beta=args.ema_weights_beta)
-
 true_answers = query_manager.get_answers(data)
 algo.fit(true_answers)
 
@@ -42,4 +41,4 @@ syndata_answers = query_manager.get_answers(syndata)
 errors = get_errors(true_answers, syndata_answers)
 print(errors)
 
-save_results("gem.csv", './results', args, errors)
+save_results("gem_marginal.csv", './results', args, errors)

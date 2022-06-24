@@ -1,13 +1,12 @@
-import time
 import argparse
-import itertools
 import numpy as np
-import pandas as pd
 
 from tqdm import tqdm
 from qm import KWayMarginalSupportQM
-from algorithms.base.algo import IterativeAlgorithm
+from algorithms.algo import IterativeAlgorithm
 from utils.mechanisms import exponential_mech, gaussian_mech
+
+import pdb
 
 class MWEM(IterativeAlgorithm):
     """
@@ -51,6 +50,7 @@ class MWEM(IterativeAlgorithm):
         return A_init
 
     def _sample(self, scores):
+        scores[self.past_query_idxs] = -np.infty
         max_query_idx = exponential_mech(scores, self.alpha * self.eps0, self.qm.sensitivity)
         self.past_query_idxs.append(max_query_idx)
         return max_query_idx
@@ -61,6 +61,43 @@ class MWEM(IterativeAlgorithm):
         self.past_measurements.append(noisy_answer)
         return noisy_answer
 
+    def _get_support_answers(self, q_t_ind):
+        query_attrs = self.qm.queries[q_t_ind]
+        query_mask = query_attrs != -1
+        q_t_x = self.data_support.df.values[:, query_mask] - query_attrs[query_mask]
+        q_t_x = np.abs(q_t_x).sum(axis=1)
+        q_t_x = (q_t_x == 0).astype(int)
+        return q_t_x
+
+    def _optimize(self, syn_answers):
+        q_t_ind = self.past_query_idxs[-1]
+        m_t = self.past_measurements[-1]
+        q_t_x = self._get_support_answers(q_t_ind)
+        self.measurements_dict[q_t_ind] = (q_t_x, m_t)
+
+        idx = np.abs(syn_answers[self.past_query_idxs] - self.past_measurements).argmax()
+        q_t_ind = self.past_query_idxs[idx]
+
+        mw_update_queries = [q_t_ind]
+        if self.recycle_queries:
+            errors_dict = {}
+            for idx, (q_t_x, m_t) in self.measurements_dict.items():
+                q_t_A = syn_answers[idx]
+                errors_dict[idx] = np.abs(m_t - q_t_A).max()
+            mask = np.array(list(errors_dict.values())) >= 0.5 * errors_dict[q_t_ind]
+            past_indices = np.array(list(errors_dict.keys()))[mask]
+            np.random.shuffle(past_indices)
+            mw_update_queries += list(past_indices)
+
+        for i in mw_update_queries:
+            q_t_A = syn_answers[i]
+            q_t_x, m_t = self.measurements_dict[i]
+            factor = np.exp(q_t_x * (m_t - q_t_A) / 2)
+            self.A *= factor
+            self.A /= self.A.sum()
+
+        self.A_avg += self.A
+
     """
     Algorithm fits to a list of answers.
     Input:
@@ -68,13 +105,13 @@ class MWEM(IterativeAlgorithm):
     """
     def fit(self, true_answers):
         self.A_init = self._initialize_A()
-        A = np.copy(self.A_init)
-        A_avg = np.zeros(self.A_init.shape)
+        self.A = np.copy(self.A_init)
+        self.A_avg = np.zeros(self.A_init.shape)
 
         self.measurements_dict = {}
 
-        fake_answers = self.qm.get_answers(A)
-        scores = np.abs(true_answers - fake_answers)
+        syn_answers = self.qm.get_answers(self.A)
+        scores = np.abs(true_answers - syn_answers)
         pbar = tqdm(range(self.T))
         for t in pbar:
             if self.verbose:
@@ -86,43 +123,13 @@ class MWEM(IterativeAlgorithm):
             # MEASURE
             m_t = self._measure(true_answers[q_t_ind])
 
-            # Multiplicative Weights update
-            query_attrs = self.qm.queries[q_t_ind]
-            query_mask = query_attrs != -1
-            q_t_x = self.data_support.df.values[:, query_mask] - query_attrs[query_mask]
-            q_t_x = np.abs(q_t_x).sum(axis=1)
-            q_t_x = (q_t_x == 0).astype(int)
+            # Multiplicative Weights
+            self._optimize(syn_answers)
 
-            self.measurements_dict[q_t_ind] = (q_t_x, m_t)
+            syn_answers = self.qm.get_answers(self.A)
+            scores = np.abs(true_answers - syn_answers)
 
-            mw_update_queries = [q_t_ind]
-            if self.recycle_queries:
-                errors_dict = {}
-                for idx, (q_t_x, m_t) in self.measurements_dict.items():
-                    q_t_A = fake_answers[idx]
-                    errors_dict[idx] = np.abs(m_t - q_t_A).max()
-                mask = np.array(list(errors_dict.values())) >= 0.5 * errors_dict[q_t_ind]
-                past_indices = np.array(list(errors_dict.keys()))[mask]
-                np.random.shuffle(past_indices)
-                mw_update_queries += list(past_indices)
-
-            for i in mw_update_queries:
-                q_t_A = fake_answers[i]
-                q_t_x, m_t = self.measurements_dict[i]
-                factor = np.exp(q_t_x * (m_t - q_t_A) / 2)
-                A = A * factor
-                A = A / A.sum()
-
-            A_avg += A
-
-            fake_answers = self.qm.get_answers(A)
-            scores = np.abs(true_answers - fake_answers)
-
-        A_last = np.copy(A)
-        A_avg /= self.T
-
-        self.A_last = A_last
-        self.A_avg = A_avg
+        self.A_avg /= self.T
 
     """
     Returns synthetic data in some form
@@ -130,28 +137,4 @@ class MWEM(IterativeAlgorithm):
     def get_syndata(self, return_avg=False):
         if return_avg:
             return self.A_avg
-        return self.A_last
-
-def get_args():
-    parser = argparse.ArgumentParser()
-
-    # data args
-    parser.add_argument('--dataset', type=str, default='adult-reduced')
-    parser.add_argument('--marginal', type=int, default=3)
-    parser.add_argument('--workload', type=int, default=32)
-    parser.add_argument('--workload_seed', type=int, default=0)
-    # privacy args
-    parser.add_argument('--epsilon', type=float, help='Privacy parameter', default=1.0)
-    parser.add_argument('--T', type=int, default=10)
-    parser.add_argument('--alpha', type=float, default=0.5)
-    # general algo args
-    parser.add_argument('--verbose', action='store_true')
-    parser.add_argument('--test_seed', type=int, default=None)
-
-    # MWEM specific params
-    parser.add_argument('--recycle', action='store_true', help='reuse past queries for MW')
-
-    args = parser.parse_args()
-
-    print(args)
-    return args
+        return self.A

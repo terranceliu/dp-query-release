@@ -32,8 +32,10 @@ def get_args(base, iterative, public=False):
         parser.add_argument('--resample', action='store_true')
     elif base == 'fixed':
         parser.add_argument('--K', type=int, default=1000)
+    elif base == 'explicit':
+        pass
     else:
-        assert False, 'invalid base generator selection'
+        assert False, 'invalid syndata generator selection'
 
     if iterative == 'gem':
         parser.add_argument('--ema_weights', action='store_true')
@@ -41,6 +43,10 @@ def get_args(base, iterative, public=False):
     elif iterative == 'rap_softmax':
         parser.add_argument('--samples_per_round', type=int, default=1)
     elif iterative == 'non_dp':
+        pass
+    elif iterative == 'mwem':
+        parser.add_argument('--recycle', action='store_true')
+    elif iterative == 'pep':
         pass
     else:
         assert False, 'invalid iterative algorithm procedure'

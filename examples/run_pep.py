@@ -1,10 +1,14 @@
-from algorithms.mwem import MWEM
+import torch
+
+from algorithms.pep import PEP
 from utils.arguments import get_args
 from qm import KWayMarginalSupportQM
 from utils.utils_data import get_data, get_rand_workloads
 from utils.utils_general import get_errors, get_per_round_budget_zCDP
 
-args = get_args(base='explicit', iterative='mwem')
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+args = get_args(base='explicit', iterative='pep')
 
 # load dataset (using csv filename)
 data = get_data(args.dataset)
@@ -20,14 +24,13 @@ delta = 1.0 / len(data) ** 2
 eps0, rho = get_per_round_budget_zCDP(args.epsilon, delta, args.T, alpha=args.alpha)
 
 # instantiate class for our algorithm
-model_save_dir = './save/MWEM/{}/{}_{}_{}/{}_{}_{}_{}/'.format(args.dataset,
-                                                               args.marginal, args.workload, args.workload_seed,
-                                                               args.epsilon, args.T, args.alpha, args.recycle)
-mwem = MWEM(query_manager, args.T, eps0,
-            alpha=args.alpha, default_dir=model_save_dir,
-            recycle_queries=args.recycle,
-            verbose=args.verbose, seed=args.test_seed,
-            )
+model_save_dir = './save/PEP/{}/{}_{}_{}/{}_{}_{}_{}/'.format(args.dataset,
+                                                              args.marginal, args.workload, args.workload_seed,
+                                                              args.epsilon, args.T, args.alpha, args.max_iters)
+mwem = PEP(query_manager, args.T, eps0, device=device,
+           alpha=args.alpha, max_iters=args.max_iters,
+           default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
+           )
 
 # get the true answers to our evaluation queries
 A_real = query_manager.convert_to_support_distr(data)

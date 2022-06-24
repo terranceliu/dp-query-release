@@ -5,7 +5,7 @@ from tqdm import tqdm
 from torch import optim
 
 from qm import KWayMarginalQM
-from algorithms.base.algo import IterativeAlgorithmTorch
+from algorithms.algo import IterativeAlgorithmTorch
 
 class IterativeAlgoNonDP(IterativeAlgorithmTorch):
     def __init__(self, G, qm, T, device,

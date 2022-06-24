@@ -5,7 +5,7 @@ from utils.arguments import get_args
 from utils.utils_data import get_data, get_rand_workloads
 from utils.utils_general import get_per_round_budget_zCDP, get_errors, save_results
 
-from algorithms.base.generator import FixedGenerator
+from algorithms.syndata.generator import FixedGenerator
 from algorithms.rap_softmax import IterAlgoRAPSoftmax
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -41,5 +41,4 @@ syndata_answers = query_manager.get_answers(syndata)
 errors = get_errors(true_answers, syndata_answers)
 print(errors)
 
-save_results("rap_softmax.csv", './results', args, errors)
-
+save_results("rap_softmax_marginal.csv", './results', args, errors)

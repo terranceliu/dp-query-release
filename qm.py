@@ -13,7 +13,7 @@ from utils.utils_qm import get_xy_nbin, histogramdd
 from utils.utils_general import get_num_queries, get_min_dtype, add_row_convert_dtype, get_data_onehot
 
 """
-Query manager base class
+Query manager syndata class
 """
 class QueryManager(ABC):
     def __init__(self, data, workloads, sensitivity=None):
@@ -163,7 +163,6 @@ class KWayMarginalQMTorch(KWayMarginalQM):
 
     # Currently (torch=1.11.0), torch.histogramdd doesn't support CUDA operations (rewrite below if support is added)
     def get_answers(self, data, weights=None, by_workload=False, density=True, batch_size=1000):
-        print('Calculating answers...')
         if weights is None:
             weights = np.ones(len(data))
         weights = torch.tensor(weights).unsqueeze(-1).to(self.device)
@@ -255,6 +254,7 @@ class KWayMarginalSupportQM(KWayMarginalQM):
             idx += x.shape[0]
 
         # overwrite
+        self.queries_onehot = self.queries
         self.queries = queries
         return self.queries
 
