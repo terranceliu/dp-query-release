@@ -1,4 +1,4 @@
-from algorithms.mwem import MWEM
+from algorithms.mwem import MWEM, ApproxDistr
 from utils.arguments import get_args
 from qm import KWayMarginalSupportQM
 from utils.utils_data import get_data, get_rand_workloads
@@ -23,7 +23,9 @@ eps0, rho = get_per_round_budget_zCDP(args.epsilon, delta, args.T, alpha=args.al
 model_save_dir = './save/MWEM/{}/{}_{}_{}/{}_{}_{}_{}/'.format(args.dataset,
                                                                args.marginal, args.workload, args.workload_seed,
                                                                args.epsilon, args.T, args.alpha, args.recycle)
-mwem = MWEM(query_manager, args.T, eps0,
+
+D = ApproxDistr(query_manager)
+mwem = MWEM(D, query_manager, args.T, eps0,
             alpha=args.alpha, default_dir=model_save_dir,
             recycle_queries=args.recycle,
             verbose=args.verbose, seed=args.test_seed,

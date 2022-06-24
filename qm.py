@@ -318,6 +318,14 @@ class KWayMarginalSupportQM(KWayMarginalQM):
             return np.concatenate(ans_vec)
         return ans_vec
 
+    def get_support_answers(self, q_t_ind):
+        query_attrs = self.queries[q_t_ind]
+        query_mask = query_attrs != -1
+        q_t_x = self.data_support.df.values[:, query_mask] - query_attrs[query_mask]
+        q_t_x = np.abs(q_t_x).sum(axis=1)
+        q_t_x = (q_t_x == 0).astype(int)
+        return q_t_x
+
 class KWayMarginalSupportQMPublic(KWayMarginalSupportQM):
     def __init__(self, data, workloads, sensitivity=None,
                  cache_dir=None, overwrite_cache=True):
