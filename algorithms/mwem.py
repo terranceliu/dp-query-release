@@ -1,46 +1,15 @@
-import torch
 import numpy as np
 
 from tqdm import tqdm
 from qm import KWayMarginalSupportQM
-from algorithms.algo import IterativeAlgorithm, IterativeAlgorithmTorch
-from utils.utils_general import get_data_onehot
+from algorithms.algo import IterativeAlgorithm
 from utils.mechanisms import exponential_mech, gaussian_mech
-
-import pdb
-
-class ApproxDistr():
-    def __init__(self, qm, device=None, query_bs=1000):
-        self.qm = qm
-        self.device = torch.device("cpu") if device is None else device
-        self.query_bs = query_bs
-
-        self.data_support = self.qm.data_support
-
-        self._initialize_A()
-
-    def _initialize_A(self):
-        A_init = np.ones(len(self.data_support))
-        A_init /= len(A_init)
-        self.A = A_init
-        self.A_avg = self.A.copy()
-
-    def get_answers(self, idxs=None, use_avg=False):
-        A = self.A_avg if use_avg else self.A
-        answers = self.qm.get_answers(A)
-        if idxs is not None:
-            return answers[idxs]
-        return answers
-
-    def get_syndata(self, num_samples=100000, use_avg=False):
-        A = self.A_avg if use_avg else self.A
-        return self.A
 
 class MWEMBase(IterativeAlgorithm):
     """
         Constructors that initializes parameters
         Input:
-        qm (QueryManager): query manager for defining queries and calculating answers
+        G (ApproxDistr): maintains approximating distribution A
         T (int): Number of rounds to run algorithm
         eps0 (float): Privacy budget per round (zCDP)
         N (int): shape of DataFrame/dataset
@@ -52,15 +21,13 @@ class MWEMBase(IterativeAlgorithm):
         recycle_queries (QueryManager?): past queries
         seed (int): seed set to reproduce results (if needed)
     """
-    def __init__(self, D, qm, T, eps0,
+    def __init__(self, G, T, eps0,
                  alpha=0.5, default_dir=None,
                  recycle_queries=False,
                  verbose=False, seed=None):
 
-        super().__init__(qm, T, eps0, alpha=alpha, default_dir=default_dir, verbose=verbose, seed=seed)
-        self.D = D
+        super().__init__(G, T, eps0, alpha=alpha, default_dir=default_dir, verbose=verbose, seed=seed)
         self.recycle_queries = recycle_queries
-
         self.measurements_dict = {}
 
     def _valid_qm(self):
@@ -70,8 +37,8 @@ class MWEMBase(IterativeAlgorithm):
         q_t_A = syn_answers[q_t_ind]
         q_t_x, m_t = self.measurements_dict[q_t_ind]
         factor = np.exp(q_t_x * (m_t - q_t_A) / 2)
-        self.D.A *= factor
-        self.D.A /= self.D.A.sum()
+        self.G.A *= factor
+        self.G.A /= self.G.A.sum()
 
     def _optimize(self, syn_answers):
         q_t_ind = self.past_query_idxs[-1]
@@ -94,15 +61,10 @@ class MWEMBase(IterativeAlgorithm):
             for q_t_ind in update_idxs:
                 self._multiplicative_weights(syn_answers, q_t_ind)
 
-        self.D.A_avg += self.D.A
+        self.G.A_avg += self.G.A
 
-    """
-    Algorithm fits to a list of answers.
-    Input:
-        true_answers (np.array): numpy array of answers the algorithm is fitting to
-    """
     def fit(self, true_answers):
-        syn_answers = self.D.get_answers()
+        syn_answers = self.G.get_answers()
         scores = np.abs(true_answers - syn_answers)
 
         pbar = tqdm(range(self.T))
@@ -119,13 +81,13 @@ class MWEMBase(IterativeAlgorithm):
             # Multiplicative Weights
             self._optimize(syn_answers)
 
-            syn_answers = self.D.get_answers()
+            syn_answers = self.G.get_answers()
             scores = np.abs(true_answers - syn_answers)
 
-        self.D.A_avg /= self.T
+        self.G.A_avg /= self.T
 
     def get_syndata(self, num_samples=100000, use_avg=False):
-        return self.D.get_syndata(num_samples=num_samples, use_avg=use_avg)
+        return self.G.get_syndata(num_samples=num_samples, use_avg=use_avg)
 
 class MWEM(MWEMBase):
     def _sample(self, scores):

@@ -1,4 +1,5 @@
-from algorithms.mwem import MWEM, ApproxDistr
+from algorithms.syndata.approx import ApproxDistr
+from algorithms.mwem import MWEM
 from utils.arguments import get_args
 from qm import KWayMarginalSupportQM
 from utils.utils_data import get_data, get_rand_workloads
@@ -24,8 +25,8 @@ model_save_dir = './save/MWEM/{}/{}_{}_{}/{}_{}_{}_{}/'.format(args.dataset,
                                                                args.marginal, args.workload, args.workload_seed,
                                                                args.epsilon, args.T, args.alpha, args.recycle)
 
-D = ApproxDistr(query_manager)
-mwem = MWEM(D, query_manager, args.T, eps0,
+G = ApproxDistr(query_manager)
+mwem = MWEM(G, args.T, eps0,
             alpha=args.alpha, default_dir=model_save_dir,
             recycle_queries=args.recycle,
             verbose=args.verbose, seed=args.test_seed,
@@ -39,8 +40,7 @@ true_answers = query_manager.get_answers(A_real)
 mwem.fit(true_answers)
 
 # get output of the algorithm
-syndata = mwem.get_syndata()
-syndata_answers = query_manager.get_answers(syndata)
+syndata_answers = G.get_answers()
 
 # evaluate error
 errors = get_errors(true_answers, syndata_answers)

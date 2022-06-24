@@ -28,7 +28,7 @@ model_save_dir = './save/GEM/{}/{}_{}_{}/{}_{}_{}_{}_{}/'.format(args.dataset,
 
 G = NeuralNetworkGenerator(query_manager, K=args.K, device=device, init_seed=args.test_seed,
                            embedding_dim=args.dim, gen_dims=None, resample=args.resample)
-algo = IterAlgoGEM(G, query_manager, args.T, eps0,
+algo = IterAlgoGEM(G, args.T, eps0,
                    alpha=args.alpha, default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
                    loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min,
                    max_idxs=args.max_idxs, max_iters=args.max_iters,
@@ -36,6 +36,7 @@ algo = IterAlgoGEM(G, query_manager, args.T, eps0,
 true_answers = query_manager.get_answers(data)
 algo.fit(true_answers)
 
+# get answers using sampled rows
 syndata = algo.get_syndata(args.num_samples)
 syndata_answers = query_manager.get_answers(syndata)
 errors = get_errors(true_answers, syndata_answers)

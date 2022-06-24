@@ -26,12 +26,14 @@ class IterativeAlgorithm(ABC):
     Attributes:
         errors: TODO: perhaps we should write a separate class for logging/keeping track of errors?
     """
-    def __init__(self, qm, T, eps0,
+    def __init__(self, G, T, eps0,
                  alpha=0.5, default_dir=None, verbose=False, seed=None):
         assert 0 <= alpha <= 1, "alpha must be between 0 and 1"
 
-        self.qm = qm
-        self.queries = qm.queries
+        self.G = G
+        self.qm = G.qm
+        self.queries = G.qm.queries
+
         self.T = T
         self.eps0 = eps0
         self.alpha = alpha
@@ -140,11 +142,10 @@ class IterativeAlgorithm(ABC):
         pass
 
 class IterativeAlgorithmTorch(IterativeAlgorithm):
-    def __init__(self, G, qm, T, eps0,
+    def __init__(self, G, T, eps0,
                  alpha=0.5, default_dir=None, verbose=False, seed=None):
-        super().__init__(qm, T, eps0,
+        super().__init__(G, T, eps0,
                          alpha=alpha, default_dir=default_dir, verbose=verbose, seed=seed)
-        self.G = G
         self.device = self.G.device
 
         # convert these lists into tensors for Pytorch code
