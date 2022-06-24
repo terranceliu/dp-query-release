@@ -12,7 +12,7 @@ class PEPBase(MWEMBase):
                  alpha=0.5, max_iters=100, query_bs=1000,
                  default_dir=None, verbose=False, seed=None):
         super().__init__(qm, T, eps0, alpha=alpha, default_dir=default_dir, verbose=verbose, seed=seed)
-        self.device = torch.device("cpu") if device is None else device # CUDA recommended only for single-query accounting
+        self.device = torch.device("cpu") if device is None else device
         self.max_iters = max_iters
         self.query_bs = query_bs
 
@@ -58,6 +58,7 @@ class PEPBase(MWEMBase):
             self.A *= factor
             self.A /= self.A.sum()
 
+# recommend running with CPU (device=None)
 class PEP(PEPBase):
     def _sample(self, scores):
         scores[self.past_query_idxs] = -np.infty
@@ -76,17 +77,16 @@ class PEP(PEPBase):
         self.past_measurements += noisy_answers
         return noisy_answers
 
+# CUDA recommended only for single-query accounting
 class PEPSingle(PEPBase):
+    def _sample(self, scores):
+        scores[self.past_query_idxs] = -np.infty
+        max_query_idx = exponential_mech(scores, self.alpha * self.eps0, self.qm.sensitivity)
+        self.past_query_idxs.append(max_query_idx)
+        return max_query_idx
+
     def _measure(self, answers):
         noisy_answer = gaussian_mech(answers, (1 - self.alpha) * self.eps0, self.qm.sensitivity)
         noisy_answer = np.clip(noisy_answer, 0, 1)
         self.past_measurements.append(noisy_answer)
         return noisy_answer
-
-    def _get_support_answers(self, q_t_ind):
-        query_attrs = self.qm.queries[q_t_ind]
-        query_mask = query_attrs != -1
-        q_t_x = self.data_support.df.values[:, query_mask] - query_attrs[query_mask]
-        q_t_x = np.abs(q_t_x).sum(axis=1)
-        q_t_x = (q_t_x == 0).astype(int)
-        return q_t_x

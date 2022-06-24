@@ -1,6 +1,6 @@
 import torch
 
-from algorithms.pep import PEP
+from algorithms.pep import PEPSingle as PEP
 from utils.arguments import get_args
 from qm import KWayMarginalSupportQM
 from utils.utils_data import get_data, get_rand_workloads

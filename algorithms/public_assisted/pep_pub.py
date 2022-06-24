@@ -1,6 +1,6 @@
-from algorithms.mwem import MWEM
+from algorithms.pep import PEP
 from qm import KWayMarginalSupportQMPublic
 
-class PMWPub(MWEM):
+class PEPPub(PEP):
     def _valid_qm(self):
         return (KWayMarginalSupportQMPublic)
