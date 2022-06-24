@@ -31,6 +31,7 @@ class IterativeAlgorithm(ABC):
         assert 0 <= alpha <= 1, "alpha must be between 0 and 1"
 
         self.qm = qm
+        self.queries = qm.queries
         self.T = T
         self.eps0 = eps0
         self.alpha = alpha

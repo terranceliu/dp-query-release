@@ -1,6 +1,6 @@
 import torch
 
-from qm import KWayMarginalQM
+from qm import KWayMarginalQMTorch
 from utils.arguments import get_args
 from utils.utils_data import get_data, get_rand_workloads
 from utils.utils_general import get_per_round_budget_zCDP, get_errors, save_results

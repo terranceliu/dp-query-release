@@ -18,9 +18,6 @@ class IterAlgoGEM(IterativeAlgorithmTorch):
                  ):
         super().__init__(G, qm, T, eps0, device=device, alpha=alpha,
                          default_dir=default_dir, verbose=verbose, seed=seed)
-
-        self.queries = self.qm.queries
-
         # learning parameters
         self.loss_p = loss_p
         self.lr = lr

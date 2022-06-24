@@ -14,8 +14,6 @@ class IterAlgoRAPSoftmax(IterativeAlgorithmTorch):
                  samples_per_round=1, lr=1e-4, max_iters=1000, max_idxs=10000):
         super().__init__(G, qm, T, eps0, device=device, alpha=alpha,
                          default_dir=default_dir, verbose=verbose, seed=seed)
-
-        self.queries = self.qm.queries
         self.samples_per_round = samples_per_round
 
         # learning parameters

@@ -14,9 +14,6 @@ class IterativeAlgoNonDP(IterativeAlgorithmTorch):
                  ):
         super().__init__(G, qm, T, eps0=0, device=device, alpha=0,
                          default_dir=default_dir, verbose=verbose, seed=seed)
-
-        self.queries = self.qm.queries
-
         self.loss_p = loss_p
         self.lr = lr
         self.eta_min = eta_min
