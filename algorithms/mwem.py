@@ -6,9 +6,7 @@ from qm import KWayMarginalSupportQM
 from algorithms.algo import IterativeAlgorithm
 from utils.mechanisms import exponential_mech, gaussian_mech
 
-import pdb
-
-class MWEM(IterativeAlgorithm):
+class MWEMBase(IterativeAlgorithm):
     """
         Constructors that initializes paramters
         Input:
@@ -48,18 +46,6 @@ class MWEM(IterativeAlgorithm):
         A_init = np.ones(len(df_support))
         A_init /= len(A_init)
         return A_init
-
-    def _sample(self, scores):
-        scores[self.past_query_idxs] = -np.infty
-        max_query_idx = exponential_mech(scores, self.alpha * self.eps0, self.qm.sensitivity)
-        self.past_query_idxs.append(max_query_idx)
-        return max_query_idx
-
-    def _measure(self, answers):
-        noisy_answer = gaussian_mech(answers, (1 - self.alpha) * self.eps0, self.qm.sensitivity)
-        noisy_answer = np.clip(noisy_answer, 0, 1)
-        self.past_measurements.append(noisy_answer)
-        return noisy_answer
 
     def _get_support_answers(self, q_t_ind):
         query_attrs = self.qm.queries[q_t_ind]
@@ -138,3 +124,16 @@ class MWEM(IterativeAlgorithm):
         if return_avg:
             return self.A_avg
         return self.A
+
+class MWEM(MWEMBase):
+    def _sample(self, scores):
+        scores[self.past_query_idxs] = -np.infty
+        max_query_idx = exponential_mech(scores, self.alpha * self.eps0, self.qm.sensitivity)
+        self.past_query_idxs.append(max_query_idx)
+        return max_query_idx
+
+    def _measure(self, answers):
+        noisy_answer = gaussian_mech(answers, (1 - self.alpha) * self.eps0, self.qm.sensitivity)
+        noisy_answer = np.clip(noisy_answer, 0, 1)
+        self.past_measurements.append(noisy_answer)
+        return noisy_answer

@@ -6,8 +6,6 @@ from qm import KWayMarginalSupportQM
 from utils.utils_data import get_data, get_rand_workloads
 from utils.utils_general import get_errors, get_per_round_budget_zCDP
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
 args = get_args(base='explicit', iterative='pep')
 
 # load dataset (using csv filename)
@@ -27,7 +25,7 @@ eps0, rho = get_per_round_budget_zCDP(args.epsilon, delta, args.T, alpha=args.al
 model_save_dir = './save/PEP/{}/{}_{}_{}/{}_{}_{}_{}/'.format(args.dataset,
                                                               args.marginal, args.workload, args.workload_seed,
                                                               args.epsilon, args.T, args.alpha, args.max_iters)
-mwem = PEP(query_manager, args.T, eps0, device=device,
+mwem = PEP(query_manager, args.T, eps0,
            alpha=args.alpha, max_iters=args.max_iters,
            default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
            )
