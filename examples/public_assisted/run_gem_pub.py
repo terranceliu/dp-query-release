@@ -29,7 +29,7 @@ model_public_save_dir = './save/GEM_Nondp/{}/{}_{}_{}/{}_{}_{}/'.format(args.dat
                                                                         args.dim, args.K, args.resample)
 G = NeuralNetworkGenerator(query_manager, K=args.K, device=device, init_seed=args.test_seed,
                            embedding_dim=args.dim, gen_dims=None, resample=args.resample)
-algo_nondp = IterativeAlgoNonDP(G, query_manager, args.T, device,
+algo_nondp = IterativeAlgoNonDP(G, query_manager, args.T,
                                 default_dir=model_public_save_dir, verbose=args.verbose, seed=args.test_seed,
                                 loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min,
                                 max_idxs=args.max_idxs, max_iters=args.max_iters)

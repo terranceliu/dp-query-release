@@ -9,10 +9,10 @@ from algorithms.algo import IterativeAlgorithmTorch
 from utils.mechanisms import exponential_mech, gaussian_mech
 
 class IterAlgoRAPSoftmaxBase(IterativeAlgorithmTorch):
-    def __init__(self, G, qm, T, eps0, device,
+    def __init__(self, G, qm, T, eps0,
                  alpha=0.5, default_dir=None, verbose=False, seed=None,
                  samples_per_round=1, lr=1e-4, max_iters=1000, max_idxs=10000):
-        super().__init__(G, qm, T, eps0, device=device, alpha=alpha,
+        super().__init__(G, qm, T, eps0, alpha=alpha,
                          default_dir=default_dir, verbose=verbose, seed=seed)
         self.samples_per_round = samples_per_round
 

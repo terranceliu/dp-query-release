@@ -9,14 +9,14 @@ from algorithms.algo import IterativeAlgorithmTorch
 from utils.mechanisms import exponential_mech, gaussian_mech
 
 class IterAlgoGEMBase(IterativeAlgorithmTorch):
-    def __init__(self, G, qm, T, eps0, device,
+    def __init__(self, G, qm, T, eps0,
                  alpha=0.5, default_dir=None, verbose=False, seed=None,
                  loss_p=1, lr=1e-4, eta_min=1e-5, max_idxs=100, max_iters=100,
                  ema_beta=0.5, ema_error_factor=0.5,
                  ema_weights=True, ema_weights_beta=0.9,
                  save_interval=10, save_num=None,
                  ):
-        super().__init__(G, qm, T, eps0, device=device, alpha=alpha,
+        super().__init__(G, qm, T, eps0, alpha=alpha,
                          default_dir=default_dir, verbose=verbose, seed=seed)
         # learning parameters
         self.loss_p = loss_p

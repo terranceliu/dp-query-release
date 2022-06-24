@@ -54,13 +54,13 @@ class Fixed(Module):
 class Generator(ABC):
     def __init__(self, qm,
                  cont_columns=[], agg_mapping={},
-                 K=1000, query_bs=10000, device='cpu', init_seed=None,
+                 K=1000, query_bs=10000, device=None, init_seed=None,
                  ):
         self.qm = qm
         self.agg_mapping = agg_mapping
         self.K = K
         self.query_bs = query_bs
-        self.device = device
+        self.device = torch.device("cpu") if device is None else device
         self.init_seed = init_seed
 
         self.queries = self.qm.queries
@@ -176,7 +176,7 @@ class FixedGenerator(Generator):
 class NeuralNetworkGenerator(Generator):
     def __init__(self, qm,
                  cont_columns=[], agg_mapping={},
-                 K=1000, query_bs=10000, device='cpu', init_seed=None,
+                 K=1000, query_bs=10000, device=None, init_seed=None,
                  embedding_dim=128, gen_dims=None, resample=False,
                  ):
         self.embedding_dim = embedding_dim

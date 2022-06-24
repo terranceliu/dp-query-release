@@ -28,7 +28,7 @@ model_save_dir = './save/RAP_Softmax/{}/{}_{}_{}/{}_{}_{}_{}_{}/'.format(args.da
                                                                          args.samples_per_round, args.K)
 
 G = FixedGenerator(query_manager, K=args.K, device=device, init_seed=args.test_seed)
-algo = IterAlgoRAPSoftmax(G, query_manager, args.T, eps0, device,
+algo = IterAlgoRAPSoftmax(G, query_manager, args.T, eps0,
                           alpha=args.alpha, default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
                           samples_per_round=args.samples_per_round, lr=args.lr, max_iters=args.max_iters, max_idxs=args.max_idxs,
                           )
