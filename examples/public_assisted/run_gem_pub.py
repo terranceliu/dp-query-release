@@ -52,7 +52,7 @@ algo.G.generator.load_state_dict(algo_nondp.G.generator.state_dict())
 true_answers = query_manager.get_answers(data)
 algo.fit(true_answers)
 
-syndata = algo.get_syndata()
+syndata = G.get_syndata()
 syndata_answers = query_manager.get_answers(syndata)
 errors = get_errors(true_answers, syndata_answers)
 

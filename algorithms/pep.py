@@ -1,64 +1,64 @@
-import torch
 import numpy as np
+from tqdm import tqdm
 
-from algorithms.mwem import MWEMBase
-from utils.utils_general import get_data_onehot
+from qm import KWayMarginalSupportQM
+from algorithms.algo import IterativeAlgorithm
 from utils.mechanisms import exponential_mech, gaussian_mech
 
-import pdb
-
-class PEPBase(MWEMBase):
-    def __init__(self, qm, T, eps0, device=None,
-                 alpha=0.5, max_iters=100, query_bs=1000,
+class PEPBase(IterativeAlgorithm):
+    def __init__(self, G, T, eps0,
+                 alpha=0.5, max_iters=100,
                  default_dir=None, verbose=False, seed=None):
-        super().__init__(qm, T, eps0, alpha=alpha, default_dir=default_dir, verbose=verbose, seed=seed)
-        self.device = torch.device("cpu") if device is None else device
+        super().__init__(G, T, eps0, alpha=alpha, default_dir=default_dir, verbose=verbose, seed=seed)
         self.max_iters = max_iters
-        self.query_bs = query_bs
+        self.measurements_dict = {}
 
-        self.data_support_onehot = get_data_onehot(self.data_support)
-        self.data_support_onehot = torch.tensor(self.data_support_onehot, device=self.device)
-        self.queries_onehot = torch.tensor(self.qm.queries_onehot, device=self.device).long()
+    def _valid_qm(self):
+        return (KWayMarginalSupportQM)
 
-    def get_query_answers(self, idxs=None):
-        if self.device.type == 'cpu':
-            return self.qm.get_answers(self.A)[idxs]
-        else: # This seems to only be faster when idxs is small (i.e., single query accounting)
-            A = torch.tensor(self.A, device=self.device)
-            queries = self.queries_onehot[idxs]
-            answers = []
-            for _queries in torch.split(queries, self.query_bs):
-                x = self.data_support_onehot[:, _queries].all(-1)
-                x = x * A.unsqueeze(-1)
-                x = x.sum(0)
-                answers.append(x)
-            answers = torch.cat(answers)
-            return answers.cpu().numpy()
+    def _project(self, q_t_A, q_t_x, m_t, offset=1e-6):
+        a = np.clip(m_t, offset, 1 - offset)
+        b = np.clip(q_t_A, offset, 1 - offset)
+        alpha = np.log((a * (1 - b)) / ((1 - a) * b))
+        factor = np.exp(q_t_x * alpha)
+        self.G.A *= factor
+        self.G.A /= self.G.A.sum()
 
-    def _optimize(self, syn_answers):
+    def _optimize(self):
         for _ in range(self.max_iters):
-            syn_answers = self.get_query_answers(idxs=self.past_query_idxs)
+            syn_answers = self.G.get_answers(idxs=self.past_query_idxs)
             idx = np.abs(syn_answers - self.past_measurements).argmax()
+
             q_t_ind = self.past_query_idxs[idx]
-            m_t = self.past_measurements[idx]
-            q_t_A = syn_answers[idx]
-            if q_t_ind in self.measurements_dict.keys():
-                q_t_x, m_t = self.measurements_dict[q_t_ind]
-            else:
-                q_t_x = self._get_support_answers(q_t_ind)
+            if q_t_ind not in self.measurements_dict.keys():
+                q_t_x = self.qm.get_support_answers(q_t_ind)
+                m_t = self.past_measurements[idx]
                 self.measurements_dict[q_t_ind] = (q_t_x, m_t)
+            else:
+                q_t_x, m_t = self.measurements_dict[q_t_ind]
+            q_t_A = syn_answers[idx]
 
-            offset = 1e-6
-            real = np.clip(m_t, offset, 1 - offset)
-            fake = np.clip(q_t_A, offset, 1 - offset)
-            temp = (real * (1 - fake)) / ((1 - real) * fake)
-            alpha = np.log(temp)
-            factor = np.exp(q_t_x * alpha)
+            self._project(q_t_A, q_t_x, m_t)
+            self.G.A_avg += self.G.A
 
-            self.A *= factor
-            self.A /= self.A.sum()
+    def fit(self, true_answers):
+        syn_answers = self.G.get_answers()
+        scores = np.abs(true_answers - syn_answers)
 
-# recommend running with CPU (device=None)
+        pbar = tqdm(range(self.T))
+        for t in pbar:
+            if self.verbose:
+                pbar.set_description("Max Error: {:.6f}".format(scores.max()))
+
+            q_t_ind = self._sample(scores)
+            m_t = self._measure(true_answers[q_t_ind])
+            self._optimize()
+
+            syn_answers = self.G.get_answers()
+            scores = np.abs(true_answers - syn_answers)
+
+        self.G.A_avg /= self.T
+
 class PEP(PEPBase):
     def _sample(self, scores):
         scores[self.past_query_idxs] = -np.infty
@@ -77,7 +77,6 @@ class PEP(PEPBase):
         self.past_measurements += noisy_answers
         return noisy_answers
 
-# CUDA recommended only for single-query accounting
 class PEPSingle(PEPBase):
     def _sample(self, scores):
         scores[self.past_query_idxs] = -np.infty

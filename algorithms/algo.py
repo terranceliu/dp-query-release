@@ -134,13 +134,6 @@ class IterativeAlgorithm(ABC):
     def _measure(self, answers):
         pass
 
-    """
-    Returns synthetic data in some form
-    """
-    @abstractmethod
-    def get_syndata(self):
-        pass
-
 class IterativeAlgorithmTorch(IterativeAlgorithm):
     def __init__(self, G, T, eps0,
                  alpha=0.5, default_dir=None, verbose=False, seed=None):
@@ -156,9 +149,6 @@ class IterativeAlgorithmTorch(IterativeAlgorithm):
     def _set_seed(self):
         super()._set_seed()
         torch.manual_seed(self.seed)
-
-    def get_syndata(self, num_samples=100000):
-        return self.G.get_syndata(num_samples=num_samples)
 
     def get_answers(self):
         return self.G.get_qm_answers()

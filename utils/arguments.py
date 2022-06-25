@@ -24,15 +24,13 @@ def get_args(base, iterative, public=False):
     # misc
     parser.add_argument('--num_samples', type=int, default=100000)
 
-
-
     if base == 'nn':
         parser.add_argument('--K', type=int, default=1000)
         parser.add_argument('--dim', type=int, default=512)
         parser.add_argument('--resample', action='store_true')
     elif base == 'fixed':
         parser.add_argument('--K', type=int, default=1000)
-    elif base == 'explicit':
+    elif base == 'approx':
         pass
     else:
         assert False, 'invalid syndata generator selection'

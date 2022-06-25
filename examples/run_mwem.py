@@ -5,7 +5,7 @@ from qm import KWayMarginalSupportQM
 from utils.utils_data import get_data, get_rand_workloads
 from utils.utils_general import get_errors, get_per_round_budget_zCDP
 
-args = get_args(base='explicit', iterative='mwem')
+args = get_args(base='approx', iterative='mwem')
 
 # load dataset (using csv filename)
 data = get_data(args.dataset)
@@ -27,9 +27,8 @@ model_save_dir = './save/MWEM/{}/{}_{}_{}/{}_{}_{}_{}/'.format(args.dataset,
 
 G = ApproxDistr(query_manager)
 mwem = MWEM(G, args.T, eps0,
-            alpha=args.alpha, default_dir=model_save_dir,
-            recycle_queries=args.recycle,
-            verbose=args.verbose, seed=args.test_seed,
+            alpha=args.alpha, recycle_queries=args.recycle,
+            default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
             )
 
 # get the true answers to our evaluation queries

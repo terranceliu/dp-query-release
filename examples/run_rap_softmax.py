@@ -36,9 +36,9 @@ algo = IterAlgoRAPSoftmax(G, args.T, eps0,
 true_answers = query_manager.get_answers(data)
 algo.fit(true_answers)
 
-syndata = algo.get_syndata(args.num_samples)
+syndata = G.get_syndata(args.num_samples)
 syndata_answers = query_manager.get_answers(syndata)
 errors = get_errors(true_answers, syndata_answers)
 print(errors)
 
-save_results("rap_softmax_marginal.csv", './results', args, errors)
+save_results("rap_softmax.csv", './results', args, errors)

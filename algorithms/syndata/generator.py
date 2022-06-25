@@ -1,7 +1,6 @@
 import torch
 import argparse
 from abc import ABC, abstractmethod
-
 from torch.nn import BatchNorm1d, Linear, Module, ReLU, Sequential, Embedding
 
 from utils.utils_data import Dataset

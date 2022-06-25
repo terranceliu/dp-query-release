@@ -1,6 +1,6 @@
 import numpy as np
-
 from tqdm import tqdm
+
 from qm import KWayMarginalSupportQM
 from algorithms.algo import IterativeAlgorithm
 from utils.mechanisms import exponential_mech, gaussian_mech
@@ -22,10 +22,8 @@ class MWEMBase(IterativeAlgorithm):
         seed (int): seed set to reproduce results (if needed)
     """
     def __init__(self, G, T, eps0,
-                 alpha=0.5, default_dir=None,
-                 recycle_queries=False,
-                 verbose=False, seed=None):
-
+                 alpha=0.5, recycle_queries=False,
+                 default_dir=None, verbose=False, seed=None):
         super().__init__(G, T, eps0, alpha=alpha, default_dir=default_dir, verbose=verbose, seed=seed)
         self.recycle_queries = recycle_queries
         self.measurements_dict = {}
@@ -72,22 +70,14 @@ class MWEMBase(IterativeAlgorithm):
             if self.verbose:
                 pbar.set_description("Max Error: {:.6f}".format(scores.max()))
 
-            # SAMPLE
             q_t_ind = self._sample(scores)
-
-            # MEASURE
             m_t = self._measure(true_answers[q_t_ind])
-
-            # Multiplicative Weights
             self._optimize(syn_answers)
 
             syn_answers = self.G.get_answers()
             scores = np.abs(true_answers - syn_answers)
 
         self.G.A_avg /= self.T
-
-    def get_syndata(self, num_samples=100000, use_avg=False):
-        return self.G.get_syndata(num_samples=num_samples, use_avg=use_avg)
 
 class MWEM(MWEMBase):
     def _sample(self, scores):
