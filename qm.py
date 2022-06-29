@@ -165,7 +165,7 @@ class KWayMarginalQMTorch(KWayMarginalQM):
     def get_answers(self, data, weights=None, by_workload=False, density=True, batch_size=1000):
         if weights is None:
             weights = np.ones(len(data))
-        weights = torch.tensor(weights).unsqueeze(-1).to(self.device)
+        weights = torch.tensor(weights, dtype=torch.float).unsqueeze(-1).to(self.device)
 
         data_onehot = torch.tensor(get_data_onehot(data)).to(self.device)
         answers = []

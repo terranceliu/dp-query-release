@@ -24,14 +24,14 @@ def get_default_cols(dataset):
     elif dataset.startswith('adult'):
         if dataset.endswith('-reduced'):
             cols = ['sex', 'income>50K', 'race', 'marital-status',
-                    'occupation', 'education-num',
-                    'age_10'
+                    'occupation', 'education',
+                    'age'
                     ]
         else:
             cols = ['sex', 'income>50K', 'race', 'relationship', 'marital-status', 'workclass',
-                    'occupation', 'education-num', 'native-country',
+                    'occupation', 'education', 'native-country',
                     'capital-gain', 'capital-loss', 'hours-per-week',
-                    'age_10'
+                    'age'
                     ]
     elif dataset.startswith('acs'):
         if dataset.endswith('-reduced'):

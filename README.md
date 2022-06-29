@@ -9,12 +9,10 @@ Please also add the path to this repository to your PYTHONPATH to make importing
 
 # Data
 
-Data can be preprocessed using functions from preprocess.py. We provide an example of how to use these functions:
+Data can be preprocessed using the DataPreprocessor() found in from data_preprocessor.py. We provide an example of how to use this class in
 ````
-python examples/data_preprocessing/preprocess_bank.py
+python examples/data_preprocessing/preprocess_adult.py
 ````
-
-We also provide a preprocessed version of the ADULT dataset.
 
 # Execution
 
