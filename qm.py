@@ -1,6 +1,8 @@
 import os
 import copy
 import math
+import pdb
+
 import torch
 import itertools
 import numpy as np
@@ -169,12 +171,13 @@ class KWayMarginalQMTorch(KWayMarginalQM):
 
         data_onehot = torch.tensor(get_data_onehot(data)).to(self.device)
         answers = []
-        for _queries in torch.split(self.queries, batch_size):
-            x = data_onehot[:, _queries]
-            x = x.all(axis=-1)
-            x = x * weights
-            x = x.sum(0)
-            answers.append(x)
+        for queries_batch in torch.split(self.queries, batch_size):
+            answers_batch = data_onehot[:, queries_batch]
+            answers_batch[:, queries_batch == -1] = True
+            answers_batch = answers_batch.all(axis=-1)
+            answers_batch = answers_batch * weights
+            answers_batch = answers_batch.sum(0)
+            answers.append(answers_batch)
         answers = torch.cat(answers)
 
         if density:

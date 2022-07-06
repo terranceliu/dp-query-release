@@ -117,7 +117,9 @@ class Generator(ABC):
 
         answers = []
         for queries_batch in torch.split(queries, self.query_bs, dim=0):
-            answers_batch = x[:, queries_batch.T]
+            queries_batch = queries_batch.T
+            answers_batch = x[:, queries_batch]
+            answers_batch[:, queries_batch == -1] = 1
             answers_batch = answers_batch.prod(1)
             # answers_batch = answers_batch * sampling_weights
             # answers_batch = answers_batch / sampling_weights.sum()
