@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 
-from qm import KWayMarginalSupportQM
+from qm import KWayMarginalSupportQM, KWayMarginalSupportQMPublic
 from algorithms.algo import IterativeAlgorithm
 from utils.mechanisms import exponential_mech, gaussian_mech
 
@@ -14,7 +14,7 @@ class PEPBase(IterativeAlgorithm):
         self.measurements_dict = {}
 
     def _valid_qm(self):
-        return (KWayMarginalSupportQM)
+        return (KWayMarginalSupportQM, KWayMarginalSupportQMPublic)
 
     def _project(self, q_t_A, q_t_x, m_t, offset=1e-6):
         a = np.clip(m_t, offset, 1 - offset)

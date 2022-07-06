@@ -1,4 +1,4 @@
-from algorithms.syndata.approx import ApproxDistr
+from algorithms.syndata.histogram import NormalizedHistogram
 from algorithms.mwem import MWEM
 from utils.arguments import get_args
 from qm import KWayMarginalSupportQM
@@ -25,7 +25,7 @@ model_save_dir = './save/MWEM/{}/{}_{}_{}/{}_{}_{}_{}/'.format(args.dataset,
                                                                args.marginal, args.workload, args.workload_seed,
                                                                args.epsilon, args.T, args.alpha, args.recycle)
 
-G = ApproxDistr(query_manager)
+G = NormalizedHistogram(query_manager)
 mwem = MWEM(G, args.T, eps0,
             alpha=args.alpha, recycle_queries=args.recycle,
             default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,

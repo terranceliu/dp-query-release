@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 
-from qm import KWayMarginalSupportQM
+from qm import KWayMarginalSupportQM, KWayMarginalSupportQMPublic
 from algorithms.algo import IterativeAlgorithm
 from utils.mechanisms import exponential_mech, gaussian_mech
 
@@ -29,7 +29,7 @@ class MWEMBase(IterativeAlgorithm):
         self.measurements_dict = {}
 
     def _valid_qm(self):
-        return (KWayMarginalSupportQM)
+        return (KWayMarginalSupportQM, KWayMarginalSupportQMPublic)
 
     def _multiplicative_weights(self, syn_answers, q_t_ind):
         q_t_A = syn_answers[q_t_ind]

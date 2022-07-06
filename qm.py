@@ -330,12 +330,13 @@ class KWayMarginalSupportQM(KWayMarginalQM):
         return q_t_x
 
 class KWayMarginalSupportQMPublic(KWayMarginalSupportQM):
-    def __init__(self, data, workloads, sensitivity=None,
+    def __init__(self, data_public, workloads, sensitivity=None,
                  cache_dir=None, overwrite_cache=True):
-        super().__init__(data, workloads, sensitivity=sensitivity,
+        super().__init__(data_public, workloads, sensitivity=sensitivity,
                      cache_dir=cache_dir, overwrite_cache=overwrite_cache)
+        self.histogram_public = self.convert_to_support_distr(data_public)
 
-    def get_support(self, data):
-        data = copy.deepcopy(data)
+    def get_support(self, data_public):
+        data = copy.deepcopy(data_public)
         data.df = data.df.drop_duplicates()
         return data

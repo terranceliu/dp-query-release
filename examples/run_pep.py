@@ -1,4 +1,4 @@
-from algorithms.syndata.approx import ApproxDistr
+from algorithms.syndata.histogram import NormalizedHistogram
 from algorithms.pep import PEP
 from utils.arguments import get_args
 from qm import KWayMarginalSupportQM
@@ -24,7 +24,7 @@ eps0, rho = get_per_round_budget_zCDP(args.epsilon, delta, args.T, alpha=args.al
 model_save_dir = './save/PEP/{}/{}_{}_{}/{}_{}_{}_{}/'.format(args.dataset,
                                                               args.marginal, args.workload, args.workload_seed,
                                                               args.epsilon, args.T, args.alpha, args.max_iters)
-G = ApproxDistr(query_manager)
+G = NormalizedHistogram(query_manager)
 pep = PEP(G, args.T, eps0,
        alpha=args.alpha, max_iters=args.max_iters,
        default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,

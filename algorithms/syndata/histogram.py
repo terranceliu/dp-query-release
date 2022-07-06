@@ -1,7 +1,7 @@
 import numpy as np
 from utils.utils_data import Dataset
 
-class ApproxDistr():
+class NormalizedHistogram():
     def __init__(self, qm):
         self.qm = qm
         self.data_support = self.qm.data_support
