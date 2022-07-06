@@ -286,7 +286,8 @@ class KWayMarginalSupportQM(KWayMarginalQM):
                 shape = (len(self.workloads), xy.shape[0])
                 self.xy = -1 * np.ones(shape, dtype=np.int8)
             if self.nbin is None:
-                shape = (len(self.workloads), nbin.shape[0])
+                max_num_attr = np.max([len(x) for x in self.workloads])
+                shape = (len(self.workloads), max_num_attr)
                 self.nbin = -1 * np.ones(shape, dtype=np.int8)
 
             self.xy = add_row_convert_dtype(self.xy, xy, i)

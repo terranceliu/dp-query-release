@@ -60,7 +60,7 @@ def get_data_onehot(data):
 
     i = 0
     for attr in data.domain.attrs:
-        df_data.loc[df_data[attr] >= 0, attr] += + i # ignore -1
+        df_data.loc[df_data[attr] >= 0, attr] += i # ignore -1
         i += data.domain[attr]
     data_values = df_data.values
 
@@ -68,7 +68,7 @@ def get_data_onehot(data):
     arange = np.arange(len(data_values))
     arange = np.tile(arange, (data_values.shape[1], 1)).T
 
-    assert (data_values[data_values < 0] == -1).all()
+    assert (data_values[data_values < 0] == -1).all(), "negative values, possible overflow error due to dtype"
     x = np.tile(data_values[:, 0] + 1, (data_values.shape[-1], 1)).T
     x[data_values != -1] = 0
     data_values += x
