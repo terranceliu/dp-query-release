@@ -21,6 +21,7 @@ class IterativeAlgoNonDP(IterativeAlgorithmTorch):
         self.max_iters = max_iters
 
         self.optimizerG = optim.Adam(self.G.generator.parameters(), lr=self.lr)
+        # self.optimizerG = optim.SGD(self.G.generator.parameters(), lr=self.lr)
         self.schedulerG = None
         if self.eta_min is not None:
             self.schedulerG = optim.lr_scheduler.CosineAnnealingLR(self.optimizerG, self.T, eta_min=self.eta_min)

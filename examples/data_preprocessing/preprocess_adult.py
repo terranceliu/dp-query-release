@@ -5,8 +5,8 @@ from data_preprocessor import *
 data_name = 'adult'
 
 config = get_config(data_name)
-df_train = pd.read_csv('datasets/raw/adult_train.csv')
-df_test = pd.read_csv('datasets/raw/adult_test.csv')
+df_train = pd.read_csv('datasets/raw/adult/train.csv')
+df_test = pd.read_csv('datasets/raw/adult/test.csv')
 
 dt = DataPreprocessor(config)
 dt.fit([df_train, df_test])

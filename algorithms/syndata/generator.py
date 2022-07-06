@@ -2,6 +2,7 @@ import torch
 import argparse
 from abc import ABC, abstractmethod
 from torch.nn import BatchNorm1d, Linear, Module, ReLU, Sequential, Embedding
+from torch.nn import LeakyReLU, Sigmoid, LayerNorm
 
 from utils.utils_data import Dataset
 from utils.transformer import DataTransformer, get_domain_rows
@@ -11,13 +12,14 @@ import pdb
 class Residual(Module):
     def __init__(self, i, o):
         super(Residual, self).__init__()
+        self.out_dim = i + o
         self.fc = Linear(i, o)
-        self.bn = BatchNorm1d(o)
+        self.norm = BatchNorm1d(o)
         self.activation = ReLU()
 
     def forward(self, input):
         out = self.fc(input)
-        out = self.bn(out)
+        out = self.norm(out)
         out = self.activation(out)
         return torch.cat([out, input], dim=1)
 
@@ -31,7 +33,7 @@ class GenerativeNetwork(Module):
         seq = []
         for item in list(gen_dims):
             seq += [Residual(dim, item)]
-            dim += item
+            dim = seq[-1].out_dim
         seq.append(Linear(dim, data_dim))
         self.seq = Sequential(*seq)
 
@@ -131,7 +133,7 @@ class Generator(ABC):
         answers = self.get_answers(syn)
         return answers
 
-    def _get_onehot(self, data):
+    def _get_onehot(self, data, how='sample'):
         data_t = []
         st = 0
         for item in self.transformer.output_info:
@@ -139,7 +141,12 @@ class Generator(ABC):
             if item[1] == 'softmax':
                 probs = data[:, st:ed]
                 out = torch.zeros_like(probs)
-                idxs = torch.multinomial(probs, num_samples=1).squeeze(dim=-1)
+                if how == "sample":
+                    idxs = torch.multinomial(probs, num_samples=1).squeeze(dim=-1)
+                elif how == "max":
+                    idxs = probs.argmax(-1)
+                else:
+                    raise NotImplementedError
                 out[torch.arange(out.shape[0]).to(self.device), idxs] = 1
                 data_t.append(out)
             else:
@@ -147,12 +154,12 @@ class Generator(ABC):
             st = ed
         return torch.cat(data_t, dim=1)
 
-    def get_syndata(self, num_samples=100000): # TODO: any # samples
+    def get_syndata(self, num_samples=100000, how='sample'): # TODO: any # samples
         samples = []
 
         syn = self.generate().detach()
         for i in range(num_samples // self.K):
-            x = self._get_onehot(syn)
+            x = self._get_onehot(syn, how=how)
             samples.append(x)
         samples = torch.cat(samples, dim=0).cpu()
 
