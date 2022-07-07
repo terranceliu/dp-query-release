@@ -5,7 +5,7 @@ from qm import KWayMarginalSupportQM
 from utils.utils_data import get_data, get_rand_workloads
 from utils.utils_general import get_errors, get_per_round_budget_zCDP
 
-args = get_args(base='approx', iterative='mwem')
+args = get_args(base='nhist', iterative='mwem')
 
 # load dataset (using csv filename)
 data = get_data(args.dataset)

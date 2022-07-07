@@ -5,7 +5,7 @@ from qm import KWayMarginalSupportQM
 from utils.utils_data import get_data, get_rand_workloads
 from utils.utils_general import get_errors, get_per_round_budget_zCDP
 
-args = get_args(base='approx', iterative='non_dp')
+args = get_args(base='nhist', iterative='non_dp')
 
 # load dataset (using csv filename)
 data = get_data(args.dataset)
@@ -16,14 +16,9 @@ workloads = get_rand_workloads(data, args.workload, args.marginal, seed=args.wor
 # the query manager has methods we use to evaluate queries on an input dataset
 query_manager = KWayMarginalSupportQM(data, workloads)
 
-# defines differential privacy parameters (zCDP)
-delta = 1.0 / len(data) ** 2
-eps0, rho = get_per_round_budget_zCDP(args.epsilon, delta, args.T, alpha=args.alpha)
-
 # instantiate class for our algorithm
-model_save_dir = './save/EP/{}/{}_{}_{}/{}_{}_{}_{}/'.format(args.dataset,
-                                                             args.marginal, args.workload, args.workload_seed,
-                                                             args.epsilon, args.T, args.alpha, args.max_iters)
+model_save_dir = './save/EP/{}/{}_{}_{}/{}/'.format(args.dataset, args.marginal, args.workload,
+                                                    args.workload_seed, args.T)
 G = NormalizedHistogram(query_manager)
 ep = EntropyProjection(G, args.T, default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed)
 

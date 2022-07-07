@@ -17,9 +17,9 @@ workloads = get_rand_workloads(data, args.workload, args.marginal, seed=args.wor
 
 query_manager = KWayMarginalQMTorch(data, workloads, device=device)
 
-model_save_dir = './save/GEM_Nondp/{}/{}_{}_{}/{}_{}_{}/'.format(args.dataset,
-                                                                 args.marginal, args.workload, args.workload_seed,
-                                                                 args.dim, args.K, args.resample)
+model_save_dir = './save/Gen_NN_NonDP/{}/{}_{}_{}/{}_{}_{}/'.format(args.dataset,
+                                                                    args.marginal, args.workload, args.workload_seed,
+                                                                    args.dim, args.K, args.resample)
 
 G = NeuralNetworkGenerator(query_manager, K=args.K, device=device, init_seed=args.test_seed,
                            embedding_dim=args.dim, gen_dims=None, resample=args.resample)

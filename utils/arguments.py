@@ -30,7 +30,7 @@ def get_args(base, iterative, public=False):
         parser.add_argument('--resample', action='store_true')
     elif base == 'fixed':
         parser.add_argument('--K', type=int, default=1000)
-    elif base == 'approx':
+    elif base == 'nhist':
         pass
     else:
         assert False, 'invalid syndata generator selection'
