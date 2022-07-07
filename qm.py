@@ -336,5 +336,5 @@ class KWayMarginalSupportQMPublic(KWayMarginalSupportQM):
 
     def get_support(self, data_public):
         data = copy.deepcopy(data_public)
-        data.df = data.df.drop_duplicates()
+        data.df = data.df.drop_duplicates().reset_index(drop=True)
         return data
