@@ -6,7 +6,7 @@ from utils.utils_data import get_data, get_rand_workloads
 from utils.utils_general import get_errors, get_per_round_budget_zCDP
 
 from algorithms.syndata.generator import NeuralNetworkGenerator
-from algorithms.non_dp import IterativeAlgoNonDP
+from algorithms.gen_nondp import IterativeAlgoNonDP
 from algorithms.gem import IterAlgoGEM
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

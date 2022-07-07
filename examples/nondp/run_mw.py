@@ -1,5 +1,5 @@
 from algorithms.syndata.histogram import NormalizedHistogram
-from algorithms.nhist_nondp import EntropyProjection
+from algorithms.nhist_nondp import MultiplicativeWeights
 from utils.arguments import get_args
 from qm import KWayMarginalSupportQM
 from utils.utils_data import get_data, get_rand_workloads
@@ -21,18 +21,18 @@ delta = 1.0 / len(data) ** 2
 eps0, rho = get_per_round_budget_zCDP(args.epsilon, delta, args.T, alpha=args.alpha)
 
 # instantiate class for our algorithm
-model_save_dir = './save/EP/{}/{}_{}_{}/{}_{}_{}_{}/'.format(args.dataset,
+model_save_dir = './save/MW/{}/{}_{}_{}/{}_{}_{}_{}/'.format(args.dataset,
                                                              args.marginal, args.workload, args.workload_seed,
                                                              args.epsilon, args.T, args.alpha, args.max_iters)
 G = NormalizedHistogram(query_manager)
-ep = EntropyProjection(G, args.T, default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed)
+mw = MultiplicativeWeights(G, args.T, default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed)
 
 # get the true answers to our evaluation queries
 A_real = query_manager.convert_to_support_distr(data)
 true_answers = query_manager.get_answers(A_real)
 
 # run algorithm
-ep.fit(true_answers)
+mw.fit(true_answers)
 
 # get output of the algorithm
 syndata_answers = G.get_answers()

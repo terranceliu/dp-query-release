@@ -5,7 +5,7 @@ from utils.arguments import get_args
 from utils.utils_data import get_data, get_rand_workloads
 
 from algorithms.syndata.generator import NeuralNetworkGenerator
-from algorithms.non_dp import IterativeAlgoNonDP
+from algorithms.gen_nondp import IterativeAlgoNonDP
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 

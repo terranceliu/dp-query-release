@@ -1,10 +1,11 @@
 import numpy as np
 from tqdm import tqdm
+from abc import abstractmethod
 
 from qm import KWayMarginalSupportQM, KWayMarginalSupportQMPublic
 from algorithms.algo import IterativeAlgorithm
 
-class EntropyProjection(IterativeAlgorithm):
+class IterAlgoNondpBase(IterativeAlgorithm):
     def __init__(self, G, T,
                  default_dir=None, verbose=False, seed=None):
         super().__init__(G, T, eps0=0, alpha=0, default_dir=default_dir, verbose=verbose, seed=seed)
@@ -19,13 +20,9 @@ class EntropyProjection(IterativeAlgorithm):
     def _measure(self, answers):
         pass
 
-    def _project(self, q_t_A, q_t_x, m_t, offset=1e-6):
-        a = np.clip(m_t, offset, 1 - offset)
-        b = np.clip(q_t_A, offset, 1 - offset)
-        alpha = np.log((a * (1 - b)) / ((1 - a) * b))
-        factor = np.exp(q_t_x * alpha)
-        self.G.A *= factor
-        self.G.A /= self.G.A.sum()
+    @abstractmethod
+    def _project(self, q_t_A, q_t_x, m_t):
+        pass
 
     def fit(self, true_answers):
         if self.verbose:
@@ -53,3 +50,19 @@ class EntropyProjection(IterativeAlgorithm):
             scores = np.abs(true_answers - syn_answers)
 
         self.G.A_avg /= self.T
+
+class MultiplicativeWeights(IterAlgoNondpBase):
+    def _project(self, q_t_A, q_t_x, m_t):
+        factor = np.exp(q_t_x * (m_t - q_t_A) / 2)
+        self.G.A *= factor
+        self.G.A /= self.G.A.sum()
+
+class EntropyProjection(IterAlgoNondpBase):
+    def _project(self, q_t_A, q_t_x, m_t):
+        offset=1e-6
+        a = np.clip(m_t, offset, 1 - offset)
+        b = np.clip(q_t_A, offset, 1 - offset)
+        alpha = np.log((a * (1 - b)) / ((1 - a) * b))
+        factor = np.exp(q_t_x * alpha)
+        self.G.A *= factor
+        self.G.A /= self.G.A.sum()
