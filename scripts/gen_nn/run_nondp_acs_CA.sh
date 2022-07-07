@@ -18,7 +18,7 @@ MAX_ITERS=1
 
 export PYTHONPATH="${PYTHONPATH}:${PWD}$"
 
-python examples/run_gem_nondp.py --dataset $DATASET \
+python examples/nondp/run_nn_gen.py --dataset $DATASET \
 --marginal $MARGINAL --workload $WORKLOAD --workload_seed $WORKLOAD_SEED \
 --K $K --dim $DIM \
 --T $T --lr $LR --eta_min $ETA_MIN \

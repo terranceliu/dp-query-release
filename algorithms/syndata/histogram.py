@@ -22,7 +22,8 @@ class NormalizedHistogram():
 
     def get_syndata(self, num_samples=100000, use_avg=False):
         A = self.A_avg if use_avg else self.A
-        idxs = np.random.choice(len(self.data_support), p=A, size=num_samples, replace=True)
-        df_syn = self.data_support.df.loc[idxs].reset_index(drop=True)
+        df_support = self.data_support.df
+        idxs = np.random.choice(df_support.index.values, p=A, size=num_samples, replace=True)
+        df_syn = df_support.loc[idxs].reset_index(drop=True)
         data_syn = Dataset(df_syn, self.data_support.domain)
         return data_syn

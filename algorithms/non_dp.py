@@ -9,8 +9,8 @@ from algorithms.algo import IterativeAlgorithmTorch
 
 class IterativeAlgoNonDP(IterativeAlgorithmTorch):
     def __init__(self, G, T,
-                 default_dir=None, verbose=False, seed=None,
                  loss_p=2, lr=1e-4, eta_min=1e-5, max_idxs=10000, max_iters=1,
+                 default_dir=None, verbose=False, seed=None,
                  ):
         super().__init__(G, T, eps0=0, alpha=0,
                          default_dir=default_dir, verbose=verbose, seed=seed)
@@ -41,14 +41,15 @@ class IterativeAlgoNonDP(IterativeAlgorithmTorch):
         return loss
 
     def fit(self, true_answers):
-        print("Fitting to query answers...")
+        if self.verbose:
+            print("Fitting to query answers...")
         self.past_query_idxs = torch.arange(self.qm.num_queries)
         self.past_measurements = true_answers.clone()
 
         syn_answers = self.G.get_qm_answers()
         errors = (true_answers - syn_answers).abs()
 
-        pbar = tqdm(range(self.T))
+        pbar = tqdm(range(self.T)) if self.verbose else range(self.T)
         for t in pbar:
             if self.verbose:
                 pbar.set_description("Max Error: {:.6}".format(errors.max()))

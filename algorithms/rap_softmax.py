@@ -33,11 +33,12 @@ class IterAlgoRAPSoftmaxBase(IterativeAlgorithmTorch):
         return loss
 
     def fit(self, true_answers):
-        print("Fitting to query answers...")
+        if self.verbose:
+            print("Fitting to query answers...")
         syn_answers = self.G.get_qm_answers()
         scores = (true_answers - syn_answers).abs()
 
-        pbar = tqdm(range(self.T))
+        pbar = tqdm(range(self.T)) if self.verbose else range(self.T)
         for t in pbar:
             if self.verbose:
                 pbar.set_description("Max Error: {:.6}".format(scores.max().item()))

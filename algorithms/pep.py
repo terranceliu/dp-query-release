@@ -42,10 +42,12 @@ class PEPBase(IterativeAlgorithm):
             self.G.A_avg += self.G.A
 
     def fit(self, true_answers):
+        if self.verbose:
+            print("Fitting to query answers...")
         syn_answers = self.G.get_answers()
         scores = np.abs(true_answers - syn_answers)
 
-        pbar = tqdm(range(self.T))
+        pbar = tqdm(range(self.T)) if self.verbose else range(self.T)
         for t in pbar:
             if self.verbose:
                 pbar.set_description("Max Error: {:.6f}".format(scores.max()))
