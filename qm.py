@@ -81,8 +81,6 @@ class BaseKWayMarginalQM(QueryManager):
                 self.pos_col_map[pos] = (col, attr_val)
 
     def _setup_queries(self):
-        print("Setting up queries...")
-
         # Add flag variable for type of query - currently implemented with integer flags
         self._setup_maps()
         max_marginal = np.array([len(x) for x in self.workloads]).max()
@@ -271,7 +269,6 @@ class KWayMarginalSupportQM(KWayMarginalQM):
         return True
 
     def _setup_xy_nbin(self):
-        print("Setting up self.xy and self.nbin...")
         if self._load_xy_nbin():
             return
 

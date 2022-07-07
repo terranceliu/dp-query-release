@@ -60,7 +60,8 @@ class IterativeAlgorithm(ABC):
             self.default_dir = "./save/{}/{}".format(self.__class__.__name__, hash(time.time()))
         if not os.path.exists(self.default_dir):
             os.makedirs(self.default_dir)
-        print("Saving algorithm files to: {}".format(self.default_dir))
+        if self.verbose:
+            print("Saving algorithm files to: {}".format(self.default_dir))
 
         # set seed for reproducibility
         if self.seed is not None:
