@@ -1,3 +1,5 @@
+import pdb
+
 import torch
 import numpy as np
 
@@ -21,7 +23,6 @@ class IterativeAlgoNonDP(IterativeAlgorithmTorch):
         self.max_iters = max_iters
 
         self.optimizerG = optim.Adam(self.G.generator.parameters(), lr=self.lr)
-        # self.optimizerG = optim.SGD(self.G.generator.parameters(), lr=self.lr)
         self.schedulerG = None
         if self.eta_min is not None:
             self.schedulerG = optim.lr_scheduler.CosineAnnealingLR(self.optimizerG, self.T, eta_min=self.eta_min)
@@ -58,6 +59,8 @@ class IterativeAlgoNonDP(IterativeAlgorithmTorch):
             for _ in range(self.max_iters):
                 self.optimizerG.zero_grad()
                 idxs = torch.multinomial(p, num_samples=self.max_idxs, replacement=True)
+                # idxs = torch.multinomial(torch.ones_like(p) / len(p),
+                #                          num_samples=np.minimum(self.max_idxs, len(p)), replacement=False)
                 loss = self._get_loss(idxs)
 
                 loss.backward()
