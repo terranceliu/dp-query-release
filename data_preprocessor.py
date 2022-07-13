@@ -148,6 +148,12 @@ class DataPreprocessor():
             domain[attr] = len(self.mapping_num_bins[attr]) - 1
         return domain
 
+"""
+`mapping_num_bins` corresponds to the bins for each variable. For example
+    [a, b, c, d] -> bins = [a, b), [b, c), [c, d)
+if there is repeat (i.e., [a, a]), then we have
+    [a, a, b, c, d] -> [a, a], (a, b), [b, c), [c, d)
+"""
 def get_config(data_name):
     config = {}
 
