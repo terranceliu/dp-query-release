@@ -149,10 +149,17 @@ class DataPreprocessor():
         return domain
 
 """
-`mapping_num_bins` corresponds to the bins for each variable. For example
-    [a, b, c, d] -> bins = [a, b), [b, c), [c, d)
-if there is repeat (i.e., [a, a]), then we have
-    [a, a, b, c, d] -> [a, a], (a, b), [b, c), [c, d)
+Numerical/continuous attributes are preprocessed based on the dictionary `mapping_num_bins`
+Usage:
+    attr: num_bins (int)
+        creates `num_bins` bins that are equally spaced across the min and max values for that attribute
+    attr: bins (sorted list of ints)
+        creates bins of the format
+            bins=[a, b, c, d] -> bins = [a, b), [b, c), [c, d)
+        if there is repeat (i.e., [a, a]), then we have
+            bins=[a, a, b, c, d] -> [a, a], (a, b), [b, c), [c, d)
+if an attribute in `attr_num` is missing from `mapping_num_bins`, it will default to
+    attr: num_bins=10
 """
 def get_config(data_name):
     config = {}
