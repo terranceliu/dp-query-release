@@ -159,11 +159,31 @@ class Generator(ABC):
     def get_syndata(self, num_samples=100000, how='sample'): # TODO: any # samples
         samples = []
 
-        syn = self.generate().detach()
+        num_extra = num_samples - (num_samples // self.K) * self.K
+        if num_extra > 0:
+            idxs = torch.multinomial(torch.ones(self.K), num_samples=num_extra, replacement=False)
+            syn = self.generate().detach()
+            x = self._get_onehot(syn, how=how)[idxs]
+            samples.append(x)
+
         for i in range(num_samples // self.K):
+            syn = self.generate().detach()
             x = self._get_onehot(syn, how=how)
             samples.append(x)
+
         samples = torch.cat(samples, dim=0).cpu()
+
+        # num_remaining = num_samples - len(samples)
+        # if num_remaining > 0:
+        #     syn = self.generate().detach()
+        #     x = self._get_onehot(syn, how=how)
+        #     idxs = torch.multinomial(torch.ones(len(x)), num_samples=num_remaining, replacement=False)
+        #     x = x[idxs]
+        #     if len(samples) > 0:
+        #         samples = torch.cat([samples, x], dim=0)
+        #     else
+        #         samples = x
+        # samples = samples.cpu()
 
         samples[:, list(self.agg_mapping.keys())] = 0
         for key, val in self.agg_mapping.items():
