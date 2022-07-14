@@ -100,7 +100,7 @@ class DataPreprocessor():
                 else:
                     mask = (df[attr] >= lower) & (df[attr] < upper)
                 output[mask] = i
-            df.loc[:, attr] = output
+            df.loc[:, attr] = output.astype(int)
 
     def inverse_transform_num(self, df):
         for attr, bin_ranges in self.mapping_num_bins.items():
@@ -149,6 +149,9 @@ class DataPreprocessor():
         return domain
 
 """
+By default, the domain of each categorical variable is set to be the unique values found in the data.
+Alternatively, one can explicitly pass in the domain values in `mapping_cat_domain`
+
 Numerical/continuous attributes are preprocessed based on the dictionary `mapping_num_bins`
 Usage:
     attr: num_bins (int)
