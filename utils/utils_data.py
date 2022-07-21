@@ -33,47 +33,47 @@ def get_default_cols(dataset):
                     'capital-gain', 'capital-loss', 'hours-per-week',
                     'age'
                     ]
-    elif dataset.startswith('acs'):
-        if dataset.endswith('-reduced'):
-            # for reference
-            ##############
-            proj2 = ['SEX', 'FOODSTMP'
-                     'RACWHT', 'RACASIAN', 'RACBLK', 'RACAMIND', 'RACPACIS', 'RACOTHER'
-                     'DIFFEYE', 'DIFFHEAR', 'DIFFSENS'
-                     'HCOVANY', 'HCOVPRIV', 'HINSCAID', 'HINSCARE', 'HINSVA'
-                    ]
-            proj3 = ['SCHOOL', 'CLASSWKR', 'ACREHOUS', 'OWNERSHP', 'LABFORCE'
-                     'DIFFCARE', 'DIFFREM', 'DIFFMOB', 'DIFFPHYS'
-                     'VETSTAT', 'VETWWII', 'VET90X01', 'VETVIETN', 'VET47X50', 'VET55X64', 'VET01LTR', 'VETKOREA', 'VET75X90'
-                     'WIDINYR', 'MARRINYR', 'FERTYR'
-                    ]
-            proj4 = ['MORTGAGE', 'EMPSTAT', 'SCHLTYPE', 'LOOKING', 'CITIZEN', 'WORKEDYR'
-                     'DIVINYR', 'MARRNO',
-                     'MULTGEN'
-                     ]
-            proj5 = ['HISPAN', 'AVAILBLE', 'METRO']
-            proj6 = ['MARST']
-            proj_ = ['AGE', 'DEGFIELD', 'OCCSCORE', 'LANGUAGE' ]
-            ##############
-
-            cols = ['SEX', 'FOODSTMP',
-                    'RACWHT', 'RACASIAN', 'RACBLK', 'RACAMIND', 'RACPACIS', 'RACOTHER',
-                    'DIFFEYE', 'DIFFHEAR', # 'DIFFPHYS', 'DIFFSENS',
-                    'HCOVPRIV', 'HINSCAID', 'HINSCARE', # 'HCOVANY',
-                    'OWNERSHP', # 'VETSTAT', 'CLASSWKR', 'ACREHOUS'
-                    'EMPSTAT', # 'SCHLTYPE',
-                    ]
-        else:
-            cols = ['VETWWII', 'AVAILBLE', 'MIGRATE1', 'MARRNO', 'GRADEATT', 'RACE', 'MARRINYR', 'EDUC', 'DIFFREM',
-                    'VET75X90', 'EMPSTAT', 'VET47X50', 'MORTGAGE', 'VETVIETN', 'DIFFSENS', 'HCOVANY', 'LABFORCE',
-                    'FOODSTMP', 'NCHILD', 'NSIBS', 'VETKOREA', 'VET90X01', 'RACWHT', 'RELATE', 'SEX', #'ROOMS',
-                    'NMOTHERS', 'SCHLTYPE', 'DIFFEYE', 'VET55X64', 'SCHOOL', 'WIDINYR', 'MARST', 'VET01LTR', #'FAMSIZE',
-                    'VEHICLES', 'WORKEDYR', 'VETDISAB', 'METRO', 'DIFFMOB', 'ACREHOUS', 'NFATHERS', #'LANGUAGE',
-                    'NCHLT5', 'SPEAKENG', 'CLASSWKR', 'CITIZEN', 'VACANCY', 'RACASIAN', 'DIFFCARE', #'SEI', 'DEGFIELD',
-                    'AGE', 'LOOKING', 'RACBLK', 'RACAMIND', 'DIFFPHYS', 'HINSCARE', # 'OCCSCORE', 'BUILTYR2', 'BEDROOMS',
-                    'VETSTAT', 'MIGTYPE1', 'NCOUPLES', 'HISPAN', 'MULTGEN', 'DIFFHEAR', 'RACOTHER', 'HINSCAID', 'HINSVA',
-                    'OWNERSHP', 'FERTYR', 'HCOVPRIV', 'DIVINYR', 'RACPACIS' # 'ELDCH', 'YNGCH', 'NFAMS',
-                    ]
+    # elif dataset.startswith('acs'):
+    #     if dataset.endswith('-reduced'):
+    #         # for reference
+    #         ##############
+    #         proj2 = ['SEX', 'FOODSTMP'
+    #                  'RACWHT', 'RACASIAN', 'RACBLK', 'RACAMIND', 'RACPACIS', 'RACOTHER'
+    #                  'DIFFEYE', 'DIFFHEAR', 'DIFFSENS'
+    #                  'HCOVANY', 'HCOVPRIV', 'HINSCAID', 'HINSCARE', 'HINSVA'
+    #                 ]
+    #         proj3 = ['SCHOOL', 'CLASSWKR', 'ACREHOUS', 'OWNERSHP', 'LABFORCE'
+    #                  'DIFFCARE', 'DIFFREM', 'DIFFMOB', 'DIFFPHYS'
+    #                  'VETSTAT', 'VETWWII', 'VET90X01', 'VETVIETN', 'VET47X50', 'VET55X64', 'VET01LTR', 'VETKOREA', 'VET75X90'
+    #                  'WIDINYR', 'MARRINYR', 'FERTYR'
+    #                 ]
+    #         proj4 = ['MORTGAGE', 'EMPSTAT', 'SCHLTYPE', 'LOOKING', 'CITIZEN', 'WORKEDYR'
+    #                  'DIVINYR', 'MARRNO',
+    #                  'MULTGEN'
+    #                  ]
+    #         proj5 = ['HISPAN', 'AVAILBLE', 'METRO']
+    #         proj6 = ['MARST']
+    #         proj_ = ['AGE', 'DEGFIELD', 'OCCSCORE', 'LANGUAGE' ]
+    #         ##############
+    #
+    #         cols = ['SEX', 'FOODSTMP',
+    #                 'RACWHT', 'RACASIAN', 'RACBLK', 'RACAMIND', 'RACPACIS', 'RACOTHER',
+    #                 'DIFFEYE', 'DIFFHEAR', # 'DIFFPHYS', 'DIFFSENS',
+    #                 'HCOVPRIV', 'HINSCAID', 'HINSCARE', # 'HCOVANY',
+    #                 'OWNERSHP', # 'VETSTAT', 'CLASSWKR', 'ACREHOUS'
+    #                 'EMPSTAT', # 'SCHLTYPE',
+    #                 ]
+    #     else:
+    #         cols = ['VETWWII', 'AVAILBLE', 'MIGRATE1', 'MARRNO', 'GRADEATT', 'RACE', 'MARRINYR', 'EDUC', 'DIFFREM',
+    #                 'VET75X90', 'EMPSTAT', 'VET47X50', 'MORTGAGE', 'VETVIETN', 'DIFFSENS', 'HCOVANY', 'LABFORCE',
+    #                 'FOODSTMP', 'NCHILD', 'NSIBS', 'VETKOREA', 'VET90X01', 'RACWHT', 'RELATE', 'SEX', #'ROOMS',
+    #                 'NMOTHERS', 'SCHLTYPE', 'DIFFEYE', 'VET55X64', 'SCHOOL', 'WIDINYR', 'MARST', 'VET01LTR', #'FAMSIZE',
+    #                 'VEHICLES', 'WORKEDYR', 'VETDISAB', 'METRO', 'DIFFMOB', 'ACREHOUS', 'NFATHERS', #'LANGUAGE',
+    #                 'NCHLT5', 'SPEAKENG', 'CLASSWKR', 'CITIZEN', 'VACANCY', 'RACASIAN', 'DIFFCARE', #'SEI', 'DEGFIELD',
+    #                 'AGE', 'LOOKING', 'RACBLK', 'RACAMIND', 'DIFFPHYS', 'HINSCARE', # 'OCCSCORE', 'BUILTYR2', 'BEDROOMS',
+    #                 'VETSTAT', 'MIGTYPE1', 'NCOUPLES', 'HISPAN', 'MULTGEN', 'DIFFHEAR', 'RACOTHER', 'HINSCAID', 'HINSVA',
+    #                 'OWNERSHP', 'FERTYR', 'HCOVPRIV', 'DIVINYR', 'RACPACIS' # 'ELDCH', 'YNGCH', 'NFAMS',
+    #                 ]
 
     return cols
 
@@ -90,12 +90,13 @@ def get_data(name, root_path='./datasets/', cols='default'):
     df = df.astype(dtype)
 
     data = Dataset(df, domain)
-    if cols is None:
-        return data
 
     if cols == 'default':
         cols = get_default_cols(name)
+    if cols is None:
+        return data
     data = data.project(cols)
+
     return data
 
 def get_rand_workloads(data, num_workloads, marginal, seed=0, check_size=False):

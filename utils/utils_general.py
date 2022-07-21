@@ -1,4 +1,6 @@
 import os
+import pdb
+
 import torch
 import itertools
 import numpy as np
@@ -27,7 +29,8 @@ def get_num_queries(domain, workloads, return_workload_lens=False):
 
     num_queries = 0
     workload_lens = []
-    for feat in workloads:
+    from tqdm import tqdm
+    for feat in tqdm(workloads):
         positions = []
         for col in feat:
             i = col_map[col]
@@ -38,6 +41,9 @@ def get_num_queries(domain, workloads, return_workload_lens=False):
 
     if return_workload_lens:
         return num_queries, workload_lens
+
+    pdb.set_trace()
+    print(num_queries)
     return num_queries
 
 def get_min_dtype(arr):

@@ -1,12 +1,12 @@
 import os
 import copy
 import math
-import pdb
 
 import torch
 import itertools
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from collections.abc import Iterable
 from abc import ABC, abstractmethod
 
@@ -14,13 +14,15 @@ from utils.utils_data import Dataset
 from utils.utils_qm import get_xy_nbin, histogramdd
 from utils.utils_general import get_num_queries, get_min_dtype, add_row_convert_dtype, get_data_onehot
 
+import pdb
+
 """
 Query manager syndata class
 """
 class QueryManager(ABC):
     def __init__(self, data, workloads, sensitivity=None):
         self.domain = data.domain
-        self.workloads = workloads
+        self.workloads = sorted([tuple(sorted(x)) for x in workloads])
         self.sensitivity = sensitivity
 
         self.dim = np.sum(self.domain.shape)
@@ -32,9 +34,10 @@ class QueryManager(ABC):
         self.workload_idxs = np.cumsum(workload_lens)
         self.workload_idxs = np.vstack([self.workload_idxs[:-1], self.workload_idxs[1:]]).T
 
-        self.query_workload_map = np.zeros(self.num_queries, dtype=int)
+        self.query_workload_map = np.zeros(self.num_queries, dtype=get_min_dtype(len(self.workload_idxs)))
         for i, (start, end) in enumerate(self.workload_idxs):
             self.query_workload_map[start:end] = i
+        self.workload_map = {k: v for v, k in enumerate(self.workloads)}
 
     def regroup_answers_by_workload(self, ans):
         ans_by_workload = []
@@ -86,15 +89,23 @@ class BaseKWayMarginalQM(QueryManager):
         max_marginal = np.array([len(x) for x in self.workloads]).max()
         self.queries = -1 * np.ones((self.num_queries, max_marginal), dtype=get_min_dtype([self.dim]))
 
+        domain_values = [0] + list(self.domain.config.values())
+        domain_values = np.cumsum(domain_values)[:-1]
+        self.q_values = self.queries.copy()
+
         idx = 0
-        for feat in self.workloads:
+        for workload in tqdm(self.workloads):
             positions = []
-            for col in feat:
+            for col in workload:
                 i = self.col_map[col]
                 positions.append(self.feat_pos_map[i])
             x = list(itertools.product(*positions))
             x = np.array(x)
             self.queries[idx:idx + x.shape[0], :x.shape[1]] = x
+
+            dvals = domain_values[[self.col_map[c] for c in workload]]
+            self.q_values[idx:idx + x.shape[0], :x.shape[1]] = x - dvals
+
             idx += x.shape[0]
 
         return self.queries
@@ -122,6 +133,35 @@ class BaseKWayMarginalQM(QueryManager):
             self.query_workload_map[start:end] = i
 
         return query_mask
+
+    def get_q_desc(self, i, return_string=False):
+        query = self.q_values[i]
+        workload_idx = self.query_workload_map[i]
+        workload = self.workloads[workload_idx]
+        out = dict(zip(workload, query))
+        if not return_string:
+            return out
+
+        out_str = ''
+        for k, v in out.items():
+            out_str += '{}={} | '.format(k, v)
+        return out_str[:-3]
+
+    def get_q_idx(self, input):
+        cols = np.array(list(input.keys()))
+        vals = np.array(list(input.values()))
+        sort_idx = np.argsort(cols)
+        cols, vals = cols[sort_idx], vals[sort_idx]
+
+        cols = tuple(cols)
+        if cols not in self.workload_map.keys():
+            print("invalid set of columns")
+            return None
+        workload_idx = self.workload_map[cols]
+        query_idxs = self.workload_idxs[workload_idx]
+        q_values = self.q_values[query_idxs[0]: query_idxs[1]]
+        mask = ((q_values - vals) == 0).all(-1)
+        return np.arange(*query_idxs)[mask][0]
 
 """
 K-way marginal query manager
