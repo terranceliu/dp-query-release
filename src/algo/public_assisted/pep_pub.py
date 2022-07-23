@@ -1,4 +1,4 @@
-from src.pep import PEP
+from src.algo.pep import PEP
 from src.qm import KWayMarginalSupportQMPublic
 
 class PEPPub(PEP):

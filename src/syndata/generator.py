@@ -220,31 +220,3 @@ class NeuralNetworkGenerator(Generator):
         if self.resample:
             self.z = torch.normal(mean=self.z_mean, std=self.z_std)
         return self.generator(self.z)
-
-def get_args():
-    parser = argparse.ArgumentParser()
-
-    # data args
-    parser.add_argument('--dataset', type=str, help='queries', default='adult')
-    parser.add_argument('--marginal', type=int, help='queries', default=3)
-    parser.add_argument('--workload', type=int, help='queries', default=32)
-    parser.add_argument('--workload_seed', type=int, default=0)
-    # privacy args
-    parser.add_argument('--epsilon', type=float, help='Privacy parameter', default=1.0)
-    # general algo args
-    parser.add_argument('--verbose', action='store_true')
-    parser.add_argument('--test_seed', type=int, default=None)
-
-    # GEM specific args
-    parser.add_argument('--dim', type=int, default=512)
-    parser.add_argument('--syndata_size', type=int, default=1000)
-    parser.add_argument('--loss_p', type=int, default=1)
-    parser.add_argument('--lr', type=float, default=1e-4)
-    parser.add_argument('--max_iters', type=int, default=1000000)
-    parser.add_argument('--max_idxs', type=int, default=10000)
-    parser.add_argument('--resample', action='store_true')
-
-    args = parser.parse_args()
-
-    print(args)
-    return args

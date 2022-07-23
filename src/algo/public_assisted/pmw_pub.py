@@ -1,4 +1,4 @@
-from src.mwem import MWEM
+from src.algo.mwem import MWEM
 from src.qm import KWayMarginalSupportQMPublic
 
 class PMWPub(MWEM):

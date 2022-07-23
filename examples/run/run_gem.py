@@ -2,8 +2,8 @@ import torch
 from src.qm import KWayMarginalQMTorch
 from src.utils import get_args, get_data, get_rand_workloads, get_errors, save_results
 from src.utils import get_per_round_budget_zCDP
-from src.syndata.generator import NeuralNetworkGenerator
-from src.algo.gem import IterAlgoGEM
+from src.syndata import NeuralNetworkGenerator
+from src.algo import IterAlgoGEM
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 

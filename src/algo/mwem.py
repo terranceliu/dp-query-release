@@ -81,7 +81,11 @@ class MWEMBase(IterativeAlgorithm):
 
         self.G.A_avg /= self.T
 
+# Not implemented
 class MWEM(MWEMBase):
+    pass
+
+class MWEMSingle(MWEMBase):
     def _sample(self, scores):
         scores[self.past_query_idxs] = -np.infty
         max_query_idx = exponential_mech(scores, self.alpha * self.eps0, self.qm.sensitivity)

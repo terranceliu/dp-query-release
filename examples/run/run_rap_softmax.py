@@ -2,8 +2,8 @@ import torch
 from src.qm import KWayMarginalQMTorch
 from src.utils import get_args, get_data, get_rand_workloads, get_errors, save_results
 from src.utils import get_per_round_budget_zCDP
-from src.syndata.generator import FixedGenerator
-from src.algo.rap_softmax import IterAlgoRAPSoftmax
+from src.syndata import FixedGenerator
+from src.algo import IterAlgoRAPSoftmax
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 

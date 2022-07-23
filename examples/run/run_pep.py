@@ -1,8 +1,8 @@
 from src.qm import KWayMarginalSupportQM
 from src.utils import get_args, get_data, get_rand_workloads, get_errors, save_results
 from src.utils import get_per_round_budget_zCDP
-from src.syndata.histogram import NormalizedHistogram
-from src.algo.pep import PEP
+from src.syndata import NormalizedHistogram
+from src.algo import PEP
 
 args = get_args(base='nhist', iterative='pep')
 
@@ -24,17 +24,17 @@ model_save_dir = './save/PEP/{}/{}_{}_{}/{}_{}_{}_{}/'.format(args.dataset,
                                                               args.marginal, args.workload, args.workload_seed,
                                                               args.epsilon, args.T, args.alpha, args.max_iters)
 G = NormalizedHistogram(query_manager)
-pep = PEP(G, args.T, eps0,
-       alpha=args.alpha, max_iters=args.max_iters,
-       default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
-       )
+algo = PEP(G, args.T, eps0,
+           alpha=args.alpha, max_iters=args.max_iters,
+           default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
+           )
 
 # get the true answers to our evaluation queries
 A_real = query_manager.convert_to_support_distr(data)
 true_answers = query_manager.get_answers(A_real)
 
 # run algorithm
-pep.fit(true_answers)
+algo.fit(true_answers)
 
 # get output of the algorithm
 syndata_answers = G.get_answers()
