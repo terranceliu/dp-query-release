@@ -1,32 +1,39 @@
 # Setup
 
-Requires Python3. To install the necesssary packages, please run:
+Our codebase currently supports Python 3.7. We recommend that you create a separate virtual or Conda environment.
+
+Install PyTorch **1.12.0** (other versions of PyTorch have not yet been tested) by following these [instructions](https://pytorch.org/get-started/locally/) according to your system specifications. For example, the following command installs PyTorch with CUDA 11.6 support on Linux.
 ````
-pip install -r requirements.txt
+pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
 ````
 
-Please also add the path to this repository to your PYTHONPATH to make importing modules simpler.
+Clone this repository and install the source files (via setuptools)
+````
+git clone git@github.com:terranceliu/dp-query-release.git
+cd dp-query-release-priv
+pip install -e .
+````
 
 # Data
 
-Data can be preprocessed using functions from preprocess.py. We provide an example of how to use these functions:
+Data can be preprocessed using the DataPreprocessor class found in from data_preprocessor.py. We provide an example of how to use this class in
 ````
-python examples/data_preprocessing/preprocess_bank.py
+python examples/data_preprocessing/preprocess_adult.py
 ````
-
-We also provide a preprocessed version of the ADULT dataset.
 
 # Execution
 
 The examples directory provides examples of how to use this repository (more documentation to come). We provide the following script that provides an example of set of arguments that can be used to run GEM on the ADULT dataset.
 ````
-./examples/scripts/run_gem_adult.sh
+./examples/scripts/gen_nn/run_adult.sh
 ````
 
 # Acknowledgements
 
-We adapt code from
+Portions of our code is adapted from
 
 1) https://github.com/sdv-dev/CTGAN
 2) https://github.com/ryan112358/private-pgm
 
+
+[//]: # (conda create -n dp-query-release python=3.7)

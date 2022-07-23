@@ -2,9 +2,9 @@
 __pycache__
 .DS_Store 
 *.ipynb_checkpoints
+*.egg-info/
 .idea/*
-
 
 save
 results
-Datasets
+datasets
