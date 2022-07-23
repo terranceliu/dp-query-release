@@ -8,7 +8,7 @@ import pickle
 import numpy as np
 from abc import ABC, abstractmethod
 
-from src.utils.utils_general import get_errors
+from src.utils.general import get_errors
 
 class IterativeAlgorithm(ABC):
     """

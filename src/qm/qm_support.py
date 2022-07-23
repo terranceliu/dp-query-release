@@ -5,8 +5,8 @@ import itertools
 import numpy as np
 import pandas as pd
 from src.utils import Dataset
-from src.utils.utils_qm import get_xy_nbin, histogramdd
-from src.utils.utils_general import get_min_dtype, add_row_convert_dtype
+from src.utils.qm import get_xy_nbin, histogramdd
+from src.utils.general import get_min_dtype, add_row_convert_dtype
 from src.qm import KWayMarginalQM
 
 

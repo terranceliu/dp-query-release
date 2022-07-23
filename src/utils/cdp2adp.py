@@ -95,3 +95,12 @@ def cdp_rho(eps, delta, iterations=1000):
             rhomax = rho
 
     return rhomin
+
+def get_per_round_budget_zCDP(epsilon, delta, T, alpha=None):
+    rho = cdp_rho(epsilon, delta)
+    if alpha is None:
+        eps0 = 2 * rho / T
+    else:
+        eps0 = (2 * rho) / (T * (alpha ** 2 + (1 - alpha) ** 2))
+    eps0 = eps0 ** 0.5
+    return eps0, rho

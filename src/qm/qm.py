@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 from collections.abc import Iterable
 from abc import ABC, abstractmethod
-from src.utils.utils_general import get_num_queries, get_min_dtype, get_data_onehot
+from src.utils.general import get_num_queries, get_min_dtype, get_data_onehot
 
 """
 Query manager syndata class

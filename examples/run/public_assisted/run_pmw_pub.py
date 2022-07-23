@@ -1,8 +1,8 @@
 from src.algo.public_assisted.pmw_pub import PMWPub
 from src.utils.arguments import get_args
 from src.qm import KWayMarginalQM, KWayMarginalSupportQMPublic
-from src.utils.utils_data import get_data, get_rand_workloads, get_default_cols
-from src.utils.utils_general import get_errors, get_per_round_budget_zCDP
+from src.utils.data import get_data, get_rand_workloads, get_default_cols
+from src.utils.general import get_errors, get_per_round_budget_zCDP
 
 args = get_args(base='approx', iterative='mwem', public=True)
 

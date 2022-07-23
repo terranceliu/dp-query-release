@@ -1,21 +1,8 @@
 import os
-import pdb
-
 import torch
 import itertools
 import numpy as np
 import pandas as pd
-
-from src.utils.cdp2adp import cdp_rho
-
-def get_per_round_budget_zCDP(epsilon, delta, T, alpha=None):
-    rho = cdp_rho(epsilon, delta)
-    if alpha is None:
-        eps0 = 2 * rho / T
-    else:
-        eps0 = (2 * rho) / (T * (alpha ** 2 + (1 - alpha) ** 2))
-    eps0 = eps0 ** 0.5
-    return eps0, rho
 
 def get_num_queries(domain, workloads, return_workload_lens=False):
     col_map = {}
@@ -41,9 +28,6 @@ def get_num_queries(domain, workloads, return_workload_lens=False):
 
     if return_workload_lens:
         return num_queries, workload_lens
-
-    pdb.set_trace()
-    print(num_queries)
     return num_queries
 
 def get_min_dtype(arr):

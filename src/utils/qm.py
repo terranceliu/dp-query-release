@@ -109,7 +109,6 @@ def get_xy_nbin(sample, bins):
 
     return xy, nbin
 
-
 def histogramdd(xy, nbin, weights):
     hist = np.bincount(xy, weights, minlength=nbin.prod())
 
