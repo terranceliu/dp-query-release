@@ -1,6 +1,5 @@
 import json
-import pandas as pd
-from data_preprocessor import *
+from src.data_preprocessor import *
 
 data_name = 'adult'
 

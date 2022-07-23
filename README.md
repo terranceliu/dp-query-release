@@ -1,8 +1,27 @@
 # Setup
 
-Requires Python3. To install the necesssary packages, please run:
+We provide instructions for installing this codebase using Anaconda (which we recommend for installing PyTorch).
+
+Create a virtual environment with Python 3.7 (other versions of Python may work but have not been tested.)
 ````
-pip install -r requirements.txt
+conda create -n dp-query-release python=3.7
+````
+
+Activate your environment (remember to do this before running any code)
+````
+conda activate dp-query-release
+````
+
+Install [PyTorch](https://pytorch.org/get-started/locally/) 1.12.0 (other versions of PyTorch have not yet been tested) by following the instructions according to your system specifications.
+````
+conda install pytorch torchvision torchaudio cudatoolkit=11.6 -c pytorch -c conda-forge
+````
+
+Clone this repository and install the source files (via setuptools)
+````
+git clone git@github.com:terranceliu/dp-query-release-priv.git
+cd dp-query-release-priv
+pip install -e .
 ````
 
 Please also add the path to this repository to your PYTHONPATH to make importing modules simpler.
@@ -23,7 +42,7 @@ The examples directory provides examples of how to use this repository (more doc
 
 # Acknowledgements
 
-We adapt code from
+Portions of our code is adapted from
 
 1) https://github.com/sdv-dev/CTGAN
 2) https://github.com/ryan112358/private-pgm
