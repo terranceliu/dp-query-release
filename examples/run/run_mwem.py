@@ -1,5 +1,5 @@
 from src.qm import KWayMarginalSupportQM
-from src.utils import get_args, get_data, get_rand_workloads, get_errors, save_results
+from src.utils import get_args, get_data, get_rand_workloads, get_errors
 from src.utils import get_per_round_budget_zCDP
 from src.syndata import NormalizedHistogram
 from src.algo import MWEMSingle as MWEM

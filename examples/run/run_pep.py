@@ -42,3 +42,6 @@ syndata_answers = G.get_answers()
 # evaluate error
 errors = get_errors(true_answers, syndata_answers)
 print(errors)
+
+# save results
+save_results("pep.csv", './results', args, errors)
