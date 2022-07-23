@@ -1,6 +1,6 @@
 # Setup
 
-Our codebase currently supports Python 3.7. We recommend that you create a separate virtual or Conda environment.
+Our codebase currently supports Python **3.7**. We recommend that you create a separate virtual or Conda environment.
 
 Install PyTorch **1.12.0** (other versions of PyTorch have not yet been tested) by following these [instructions](https://pytorch.org/get-started/locally/) according to your system specifications. For example, the following command installs PyTorch with CUDA 11.6 support on Linux.
 ````
