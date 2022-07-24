@@ -82,11 +82,13 @@ def get_errors(true_answers, fake_answers):
                    }
     return results
 
-def save_results(filename, directory, args, errors):
+def get_df_results(args, errors):
     results_dict = vars(args)
     results_dict.update(errors)
     df_results = pd.Series(results_dict).to_frame().T
+    return df_results
 
+def append_results(df_results, filename, directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
@@ -96,3 +98,7 @@ def save_results(filename, directory, args, errors):
         df_results = pd.concat((df_existing_results, df_results))
 
     df_results.to_csv(results_path, index=False)
+
+def save_results(filename, directory, args, errors):
+    df_results = get_df_results(args, errors)
+    append_results(df_results, filename, directory)
