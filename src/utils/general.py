@@ -88,14 +88,18 @@ def get_df_results(args, errors):
     df_results = pd.Series(results_dict).to_frame().T
     return df_results
 
-def append_results(df_results, filename, directory):
+def append_results(df_results, filename, directory, remove_existing=False):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
     results_path = os.path.join(directory, filename)
     if os.path.exists(results_path):
-        df_existing_results = pd.read_csv(results_path)
-        df_results = pd.concat((df_existing_results, df_results))
+        if os.path.exists(results_path):
+            if remove_existing:
+                os.remove(results_path)
+            else:
+                df_existing_results = pd.read_csv(results_path)
+                df_results = pd.concat((df_existing_results, df_results))
 
     df_results.to_csv(results_path, index=False)
 
