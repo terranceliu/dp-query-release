@@ -9,5 +9,5 @@ setup(
     license="MIT",
     packages=["src"],
     zip_safe=False,
-    install_requires=["numpy", "pandas", "scipy", "tqdm", "coverage", "rdt==0.4.0"],
+    install_requires=["numpy", "pandas", "scipy", "matplotlib", "tqdm", "coverage", "rdt==0.4.0"],
 )
