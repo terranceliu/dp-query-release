@@ -10,7 +10,7 @@ from src.algo.base import IterativeAlgorithmTorch
 class IterativeAlgoNonDP(IterativeAlgorithmTorch):
     def __init__(self, G, T,
                  loss_p=2, lr=1e-4, eta_min=1e-5, max_idxs=10000, max_iters=1,
-                 log_freq=0, sample_by_error=False, save_all=False, save_best=False,
+                 sample_by_error=False, log_freq=0, save_all=False, save_best=False,
                  default_dir=None, verbose=False, seed=None,
                  ):
         super().__init__(G, T, eps0=0, alpha=0,
@@ -21,15 +21,15 @@ class IterativeAlgoNonDP(IterativeAlgorithmTorch):
         self.max_idxs = max_idxs
         self.max_iters = max_iters
 
-        self.log_freq = log_freq
         self.sample_by_error = sample_by_error
+        self.log_freq = 1 if sample_by_error else log_freq
+        if sample_by_error and log_freq != 1:
+            print("sample_by_error=True -> defaulting log_freq to 1")
         self.save_all = save_all
         self.save_best = save_best
         assert log_freq >= 0, 'record_all_errors must be >= 0'
         if log_freq == 0:
             assert not save_best, 'save_best=True requires record_all_errors > 0'
-        if log_freq != 1:
-            assert not sample_by_error, 'sample_by_error=True requires log_error_freq=1'
 
         self.optimizerG = optim.Adam(self.G.generator.parameters(), lr=self.lr)
         self.schedulerG = None
@@ -62,9 +62,8 @@ class IterativeAlgoNonDP(IterativeAlgorithmTorch):
 
         pbar = tqdm(range(self.T)) if self.verbose else range(self.T)
         for t in pbar:
-            if self.verbose:
-                if self.log_freq or self.log_freq is not None:
-                    pbar.set_description('Max Error: {:.6}'.format(errors.max()))
+            if self.verbose and self.log_freq > 0:
+                pbar.set_description('Max Error: {:.6}'.format(errors.max()))
 
             for _ in range(self.max_iters):
                 self.optimizerG.zero_grad()

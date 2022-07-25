@@ -21,4 +21,4 @@ python examples/run/nondp/run_gen_nn.py --dataset $DATASET \
 --K $K --dim $DIM \
 --T $T --lr $LR --eta_min $ETA_MIN \
 --loss_p $LOSS_P --max_idxs $MAX_IDXS --max_iters $MAX_ITERS \
---verbose --test_seed 0 --log_freq 100 --save_best
+--verbose --test_seed 0

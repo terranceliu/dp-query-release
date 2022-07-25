@@ -28,8 +28,8 @@ algo = IterativeAlgoNonDP(G, args.T,
                           default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
                           loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min,
                           max_idxs=args.max_idxs, max_iters=args.max_iters,
-                          log_freq=args.log_freq, sample_by_error=args.sample_by_error,
-                          save_all=args.save_all, save_best=args.save_best,
+                          sample_by_error=args.sample_by_error,
+                          log_freq=args.log_freq, save_all=args.save_all, save_best=args.save_best,
                           )
 
 true_answers = query_manager.get_answers(data)
