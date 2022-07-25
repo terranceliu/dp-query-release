@@ -41,7 +41,10 @@ def get_args(base, iterative, public=False):
     elif iterative == 'rap_softmax':
         parser.add_argument('--samples_per_round', type=int, default=1)
     elif iterative == 'non_dp':
-        pass
+        parser.add_argument('--log_freq', type=int, default=0)
+        parser.add_argument('--sample_by_error', action='store_true')
+        parser.add_argument('--save_all', action='store_true')
+        parser.add_argument('--save_best', action='store_true')
     elif iterative == 'mwem':
         parser.add_argument('--recycle', action='store_true')
     elif iterative == 'pep':

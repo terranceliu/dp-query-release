@@ -1,6 +1,6 @@
 import torch
 from src.qm import KWayMarginalQMTorch
-from src.utils import get_args, get_data, get_rand_workloads
+from src.utils import get_args, get_data, get_rand_workloads, get_errors
 from src.syndata import NeuralNetworkGenerator
 from src.algo.nondp import IterativeAlgoNonDP
 
@@ -13,6 +13,10 @@ data = get_data(args.dataset)
 workloads = get_rand_workloads(data, args.workload, args.marginal, seed=args.workload_seed)
 
 query_manager = KWayMarginalQMTorch(data, workloads, device=device)
+# import pdb; pdb.set_trace()
+query_manager.queries = query_manager.queries[:4234]
+query_manager.num_queries = len(query_manager.queries)
+true_answers = query_manager.get_answers(data)
 
 model_save_dir = './save/Gen_NN_NonDP/{}/{}_{}_{}/{}_{}_{}/'.format(args.dataset,
                                                                     args.marginal, args.workload, args.workload_seed,
@@ -23,7 +27,14 @@ G = NeuralNetworkGenerator(query_manager, K=args.K, device=device, init_seed=arg
 algo = IterativeAlgoNonDP(G, args.T,
                           default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
                           loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min,
-                          max_idxs=args.max_idxs, max_iters=args.max_iters)
+                          max_idxs=args.max_idxs, max_iters=args.max_iters,
+                          log_freq=args.log_freq, sample_by_error=args.sample_by_error,
+                          save_all=args.save_all, save_best=args.save_best,
+                          )
 
 true_answers = query_manager.get_answers(data)
 algo.fit(true_answers)
+
+syn_answers = G.get_qm_answers()
+errors = get_errors(true_answers, syn_answers)
+print(errors)

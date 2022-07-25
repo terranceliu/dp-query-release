@@ -10,6 +10,7 @@ from src.algo.base import IterativeAlgorithmTorch
 class IterativeAlgoNonDP(IterativeAlgorithmTorch):
     def __init__(self, G, T,
                  loss_p=2, lr=1e-4, eta_min=1e-5, max_idxs=10000, max_iters=1,
+                 log_freq=None, sample_by_error=False, save_all=False, save_best=False,
                  default_dir=None, verbose=False, seed=None,
                  ):
         super().__init__(G, T, eps0=0, alpha=0,
@@ -19,6 +20,16 @@ class IterativeAlgoNonDP(IterativeAlgorithmTorch):
         self.eta_min = eta_min
         self.max_idxs = max_idxs
         self.max_iters = max_iters
+
+        self.log_freq = log_freq
+        self.sample_by_error = sample_by_error
+        self.save_all = save_all
+        self.save_best = save_best
+        assert log_freq >= 0, 'record_all_errors must be >= 0'
+        if log_freq == 0:
+            assert not save_best, 'save_best=True requires record_all_errors > 0'
+        if log_freq != 1:
+            assert not sample_by_error, 'sample_by_error=True requires log_error_freq=1'
 
         self.optimizerG = optim.Adam(self.G.generator.parameters(), lr=self.lr)
         self.schedulerG = None
@@ -41,24 +52,28 @@ class IterativeAlgoNonDP(IterativeAlgorithmTorch):
 
     def fit(self, true_answers):
         if self.verbose:
-            print("Fitting to query answers...")
+            print('Fitting to query answers...')
         self.past_query_idxs = torch.arange(self.qm.num_queries)
         self.past_measurements = true_answers.clone()
 
         syn_answers = self.G.get_qm_answers()
         errors = (true_answers - syn_answers).abs()
+        p = errors / errors.sum()
 
         pbar = tqdm(range(self.T)) if self.verbose else range(self.T)
         for t in pbar:
             if self.verbose:
-                pbar.set_description("Max Error: {:.6}".format(errors.max()))
+                if self.log_freq or self.log_freq is not None:
+                    pbar.set_description('Max Error: {:.6}'.format(errors.max()))
 
-            p = errors / errors.sum()
             for _ in range(self.max_iters):
                 self.optimizerG.zero_grad()
-                idxs = torch.multinomial(p, num_samples=self.max_idxs, replacement=True)
-                # idxs = torch.multinomial(torch.ones_like(p) / len(p),
-                #                          num_samples=np.minimum(self.max_idxs, len(p)), replacement=False)
+
+                if self.sample_by_error:
+                    idxs = torch.multinomial(p, num_samples=self.max_idxs, replacement=True)
+                else:
+                    idxs = torch.multinomial(torch.ones_like(p) / len(p),
+                                             num_samples=np.minimum(self.max_idxs, len(p)), replacement=False)
                 loss = self._get_loss(idxs)
 
                 loss.backward()
@@ -67,10 +82,15 @@ class IterativeAlgoNonDP(IterativeAlgorithmTorch):
             if self.schedulerG is not None:
                 self.schedulerG.step()
 
-            syn_answers = self.G.get_qm_answers()
-            errors = (true_answers - syn_answers).abs()
-            self.record_errors(true_answers, syn_answers)
+            if self.log_freq > 0 and t % self.log_freq == 0:
+                syn_answers = self.G.get_qm_answers()
+                errors = (true_answers - syn_answers).abs()
+                p = errors / errors.sum()
+                self.record_errors(true_answers, syn_answers)
+                if self.save_best and np.min(self.true_max_errors) == self.true_max_errors[-1]:
+                    self.save('best.pkl')
 
-            if np.min(self.true_max_errors) == self.true_max_errors[-1]:
-                self.save('best.pkl')
-            self.save('last.pkl')
+            if self.save_all:
+                self.save('last.pkl')
+
+        self.save('last.pkl')
