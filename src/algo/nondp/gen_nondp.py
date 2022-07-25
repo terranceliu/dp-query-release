@@ -10,7 +10,7 @@ from src.algo.base import IterativeAlgorithmTorch
 class IterativeAlgoNonDP(IterativeAlgorithmTorch):
     def __init__(self, G, T,
                  loss_p=2, lr=1e-4, eta_min=1e-5, max_idxs=10000, max_iters=1,
-                 log_freq=None, sample_by_error=False, save_all=False, save_best=False,
+                 log_freq=0, sample_by_error=False, save_all=False, save_best=False,
                  default_dir=None, verbose=False, seed=None,
                  ):
         super().__init__(G, T, eps0=0, alpha=0,
