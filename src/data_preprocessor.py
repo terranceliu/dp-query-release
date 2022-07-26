@@ -26,8 +26,9 @@ class DataPreprocessor():
 
     def _get_df_domain(self, df):
         for attr in self.attr_cat:
-            if attr in self.mapping_cat_domain.keys() and self.fill_missing:
-                self.mapping_cat_domain[attr].append('_OTHER')
+            if attr in self.mapping_cat_domain.keys():
+                if self.fill_missing:
+                    self.mapping_cat_domain[attr].append('_OTHER')
             else:
                 self.mapping_cat_domain[attr] = df[attr].unique().tolist()
 
@@ -125,6 +126,8 @@ class DataPreprocessor():
         self.fit_num(df)
 
     def transform(self, df):
+        if isinstance(df, Iterable):
+            df = pd.concat(df)
         df = df.loc[:, self.attr_cat + self.attr_num].copy()
         self.transform_cat(df)
         self.transform_num(df)
