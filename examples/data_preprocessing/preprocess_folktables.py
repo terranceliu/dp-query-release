@@ -9,8 +9,6 @@ from tqdm import tqdm
 from folktables import ACSDataSource, ACSEmployment, ACSIncome, ACSPublicCoverage, ACSTravelTime, ACSMobility
 from src.data_preprocessor import DataPreprocessingConfig, DataPreprocessor
 
-import pdb
-
 RAW_DATA_DIR = './datasets/raw/folktables'
 YEAR = 2018
 HORIZON = '1-Year'
@@ -57,10 +55,6 @@ def get_acs_raw(task, state, year='2018', remove_raw_files=False, return_attrs=F
     if return_attrs:
         return df, (attr_cat, attr_num)
     return df
-
-acs_config_data = {"states": ["CA", "NY", "FL", "NY", "PA"],
-                   "tasks": ["income", "employment", "coverage", "travel", "mobility"]
-                   }
 
 def get_preprocessor_mappings(task, num_bins=NUM_BINS):
     dict_cat, dict_num = {}, {}
