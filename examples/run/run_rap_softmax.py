@@ -13,7 +13,8 @@ data = get_data(args.dataset)
 
 workloads = get_rand_workloads(data, args.workload, args.marginal, seed=args.workload_seed)
 
-query_manager = KWayMarginalQMTorch(data, workloads, device=device)
+query_manager = KWayMarginalQMTorch(data, workloads, verbose=args.verbose, device=device)
+true_answers = query_manager.get_answers(data)
 
 delta = 1.0 / len(data) ** 2
 eps0, rho = get_per_round_budget_zCDP(args.epsilon, delta, args.T * args.samples_per_round, alpha=args.alpha)
@@ -30,7 +31,6 @@ algo = IterAlgoRAPSoftmax(G, args.T, eps0,
                           samples_per_round=args.samples_per_round, lr=args.lr, max_iters=args.max_iters, max_idxs=args.max_idxs,
                           )
 
-true_answers = query_manager.get_answers(data)
 algo.fit(true_answers)
 
 syndata = G.get_syndata(args.num_samples)

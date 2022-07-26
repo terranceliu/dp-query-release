@@ -14,7 +14,8 @@ data = get_data(args.dataset)
 
 workloads = get_rand_workloads(data, args.workload, args.marginal, seed=args.workload_seed)
 
-query_manager = KWayMarginalQMTorch(data, workloads, device=device)
+query_manager = KWayMarginalQMTorch(data, workloads, verbose=args.verbose, device=device)
+true_answers = query_manager.get_answers(data)
 
 delta = 1.0 / len(data) ** 2
 eps0, rho = get_per_round_budget_zCDP(args.epsilon, delta, args.T, alpha=args.alpha)
@@ -46,7 +47,6 @@ algo = IterAlgoGEM(G, args.T, eps0,
                    ema_weights=args.ema_weights, ema_weights_beta=args.ema_weights_beta)
 algo.G.generator.load_state_dict(algo_nondp.G.generator.state_dict())
 
-true_answers = query_manager.get_answers(data)
 algo.fit(true_answers)
 
 syndata = G.get_syndata()

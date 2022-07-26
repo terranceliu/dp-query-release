@@ -16,8 +16,7 @@ def get_num_queries(domain, workloads, return_workload_lens=False):
 
     num_queries = 0
     workload_lens = []
-    from tqdm import tqdm
-    for feat in tqdm(workloads):
+    for feat in workloads:
         positions = []
         for col in feat:
             i = col_map[col]

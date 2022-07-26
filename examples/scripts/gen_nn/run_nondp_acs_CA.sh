@@ -16,7 +16,7 @@ ETA_MIN=1e-7
 MAX_IDXS=10000
 MAX_ITERS=1
 
-python examples/run/nondp/run_gen_nn.py --dataset $DATASET \
+python examples/run/nondp/run_gen_nn.py --sample_by_error --dataset $DATASET \
 --marginal $MARGINAL --workload $WORKLOAD --workload_seed $WORKLOAD_SEED \
 --K $K --dim $DIM \
 --T $T --lr $LR --eta_min $ETA_MIN \

@@ -12,10 +12,7 @@ data = get_data(args.dataset)
 
 workloads = get_rand_workloads(data, args.workload, args.marginal, seed=args.workload_seed)
 
-query_manager = KWayMarginalQMTorch(data, workloads, device=device)
-# import pdb; pdb.set_trace()
-query_manager.queries = query_manager.queries[:4234]
-query_manager.num_queries = len(query_manager.queries)
+query_manager = KWayMarginalQMTorch(data, workloads, verbose=args.verbose, device=device)
 true_answers = query_manager.get_answers(data)
 
 model_save_dir = './save/Gen_NN_NonDP/{}/{}_{}_{}/{}_{}_{}/'.format(args.dataset,
@@ -32,7 +29,6 @@ algo = IterativeAlgoNonDP(G, args.T,
                           log_freq=args.log_freq, save_all=args.save_all, save_best=args.save_best,
                           )
 
-true_answers = query_manager.get_answers(data)
 algo.fit(true_answers)
 
 syn_answers = G.get_qm_answers()
