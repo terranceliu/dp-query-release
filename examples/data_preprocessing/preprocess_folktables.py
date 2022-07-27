@@ -24,6 +24,9 @@ ALL_CONT_ATTRS = ['AGEP', 'PINCP', 'WKHP', 'PWGTP', 'INSP', 'MHP', 'MRGP', 'RMSP
                     'WGTP1', 'INTP', 'JWMNP', 'JWRIP', 'MARHYP', 'OIP', 'PAP', 'RETP', 'SEMP', 'SSIP', 'SSP',
                     'WAGP', 'WKHP', 'YOEP', 'PERNP', 'PINCP', 'POVPIP']
 
+COLS_DEL = ['ST']
+COLS_STATE_SPECIFIC = ['PUMA', 'POWPUMA']
+
 NUM_BINS = 10
 
 def split_con_cat(all_attrs):
@@ -89,6 +92,8 @@ def get_preprocessor_mappings(task, num_bins=NUM_BINS):
     return dict_cat, dict_num
 
 def preprocess_acs(task, state):
+    df = get_acs_raw(task, state)
+
     mappings_dir = os.path.join(RAW_DATA_DIR, str(YEAR), HORIZON, 'preprocessor_mappings')
     if not os.path.exists(mappings_dir):
         os.makedirs(mappings_dir)
@@ -101,6 +106,18 @@ def preprocess_acs(task, state):
         with open(mappings_path, 'wb') as handle:
             pickle.dump((dict_cat, dict_num), handle)
 
+    for attr in COLS_DEL:
+        dict_cat.pop(attr, None)
+        dict_num.pop(attr, None)
+    for attr in COLS_STATE_SPECIFIC:
+        if attr in dict_cat.keys():
+            dict_cat[attr] = list(np.unique(df[attr].unique()))
+        elif attr in dict_num.keys():
+            num_bins = len(list(dict_num.values())[0]) - 1
+            min_val, max_val = df[attr].min(), df[attr].max()
+            bins = list(np.linspace(min_val, max_val, num=num_bins + 1))
+            dict_num['mapping_cat_domain'][attr] = bins
+
     config = {}
     config['attr_cat'] = list(dict_cat.keys())
     config['attr_num'] = list(dict_num.keys())
@@ -110,7 +127,6 @@ def preprocess_acs(task, state):
     data_config = DataPreprocessingConfig(config)
     dt = DataPreprocessor(data_config)
 
-    df = get_acs_raw(task, state)
     df_preprocessed = dt.fit_transform([df])
     domain = dt.get_domain()
 
@@ -131,9 +147,9 @@ def preprocess_acs(task, state):
     with open(json_path, 'w') as f:
         json.dump(domain, f)
 
-if __name__ == "__main__":
-    acs_config_data = {"tasks": ["income", "employment", "coverage", "travel", "mobility"],
-                       "states": ["CA", "NY", 'TX', 'FL', 'PA'],
+if __name__ == '__main__':
+    acs_config_data = {'tasks': ['income', 'employment', 'coverage', 'travel', 'mobility'],
+                       'states': ['CA', 'NY', 'TX', 'FL', 'PA'],
                        }
 
     for task, state in itertools.product(acs_config_data['tasks'], acs_config_data['states']):
