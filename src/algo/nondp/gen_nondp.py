@@ -87,9 +87,9 @@ class IterativeAlgoNonDP(IterativeAlgorithmTorch):
                 p = errors / errors.sum()
                 self.record_errors(true_answers, syn_answers)
                 if self.save_best and np.min(self.true_max_errors) == self.true_max_errors[-1]:
-                    self.save('best.pkl')
+                    self.save('best.pt')
 
             if self.save_all:
-                self.save('last.pkl')
+                self.save('last.pt')
 
-        self.save('last.pkl')
+        self.save('last.pt')

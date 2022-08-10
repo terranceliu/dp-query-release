@@ -79,8 +79,7 @@ class IterativeAlgorithm(ABC):
         if directory is None:
             directory = self.default_dir
         path = os.path.join(directory, filename)
-        with open(path, 'wb') as handle:
-            pickle.dump(self.__dict__, handle)
+        torch.save(self.G.generator.state_dict(), path)
 
     """
     Load state
@@ -91,9 +90,8 @@ class IterativeAlgorithm(ABC):
         if directory is None:
             directory = self.default_dir
         path = os.path.join(directory, filename)
-        with open(path, 'rb') as handle:
-            tmp_dict = pickle.load(handle)
-        self.__dict__.update(tmp_dict)
+        state_dict = torch.load(path)
+        self.G.generator.load_state_dict(state_dict)
 
     def record_errors(self, true_answers, fake_answers):
         errors_dict = get_errors(true_answers, fake_answers)

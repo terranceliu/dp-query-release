@@ -7,7 +7,7 @@ from torch import optim
 from src.qm import KWayMarginalQM
 from src.algo.base import IterativeAlgorithmTorch
 from src.utils.mechanisms import exponential_mech, gaussian_mech
-
+l
 class IterAlgoGEMBase(IterativeAlgorithmTorch):
     def __init__(self, G, T, eps0,
                  alpha=0.5, default_dir=None, verbose=False, seed=None,
@@ -120,10 +120,10 @@ class IterAlgoGEMBase(IterativeAlgorithmTorch):
             self.record_errors(true_answers, syn_answers)
 
             if ((t + 1) % self.save_interval == 0) or (t + 1 > self.T - self.save_num):
-                self.save('epoch_{}.pkl'.format(t + 1))
+                self.save('epoch_{}.pt'.format(t + 1))
             if np.min(self.true_max_errors) == self.true_max_errors[-1]:
-                self.save('best.pkl')
-            self.save('last.pkl')
+                self.save('best.pt')
+            self.save('last.pt')
 
             if self.schedulerG is not None:
                 self.schedulerG.step()
@@ -139,7 +139,7 @@ class IterAlgoGEMBase(IterativeAlgorithmTorch):
         weights = {}
         k_array = np.arange(self.save_num)[::-1]
         for i in k_array:
-            self.load('epoch_{}.pkl'.format(self.T - i))
+            self.load('epoch_{}.pt'.format(self.T - i))
             w = self.G.generator.state_dict()
             for key in w.keys():
                 if key not in weights.keys():

@@ -31,7 +31,7 @@ algo_nondp = IterativeAlgoNonDP(G, args.T,
                                 default_dir=model_public_save_dir, verbose=args.verbose, seed=args.test_seed,
                                 loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min,
                                 max_idxs=args.max_idxs, max_iters=args.max_iters)
-algo_nondp.load('best.pkl')
+algo_nondp.load('best.pt')
 
 # initialize GEM
 model_save_dir = './save/GEM_Pub/{}/{}/{}_{}_{}/{}_{}_{}/'.format(args.dataset, args.dataset_pub,
