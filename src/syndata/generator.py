@@ -58,7 +58,7 @@ class Generator(ABC):
         self.agg_mapping = agg_mapping
         self.K = K
         self.query_bs = query_bs
-        self.device = torch.device("cpu") if device is None else device
+        self.device = device
         self.init_seed = init_seed
 
         self.queries = self.qm.queries
@@ -107,24 +107,9 @@ class Generator(ABC):
         return x
 
     def get_answers(self, x, idxs=None):
-        # fake_data, sampling_weights = fake_data[:, :-1], fake_data[:, -1:]
-        queries = self.queries
-        if idxs is not None:
-            queries = queries[idxs]
-
-        answers = []
-        for queries_batch in torch.split(queries, self.query_bs, dim=0):
-            queries_batch = queries_batch.T
-            answers_batch = x[:, queries_batch]
-            answers_batch[:, queries_batch == -1] = 1
-            answers_batch = answers_batch.prod(1)
-            # answers_batch = answers_batch * sampling_weights
-            # answers_batch = answers_batch / sampling_weights.sum()
-            answers_batch = answers_batch / self.K
-            answers_batch = answers_batch.sum(axis=0)
-            answers.append(answers_batch)
-        answers = torch.cat(answers)
-
+        weights = torch.ones(self.K, dtype=torch.float, device=self.device).unsqueeze(-1) # move later class variable
+        answers = self.qm.get_answers_helper(x, weights, query_idxs=idxs, batch_size=self.query_bs)
+        answers /= weights.sum()
         return answers
 
     def get_qm_answers(self):
@@ -169,18 +154,6 @@ class Generator(ABC):
             samples.append(x)
 
         samples = torch.cat(samples, dim=0).cpu()
-
-        # num_remaining = num_samples - len(samples)
-        # if num_remaining > 0:
-        #     syn = self.generate().detach()
-        #     x = self._get_onehot(syn, how=how)
-        #     idxs = torch.multinomial(torch.ones(len(x)), num_samples=num_remaining, replacement=False)
-        #     x = x[idxs]
-        #     if len(samples) > 0:
-        #         samples = torch.cat([samples, x], dim=0)
-        #     else
-        #         samples = x
-        # samples = samples.cpu()
 
         samples[:, list(self.agg_mapping.keys())] = 0
         for key, val in self.agg_mapping.items():

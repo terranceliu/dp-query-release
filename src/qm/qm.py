@@ -234,6 +234,27 @@ class KWayMarginalQMTorch(KWayMarginalQM):
         self.device = torch.device("cpu") if device is None else device
         self.queries = torch.tensor(self.queries).long().to(self.device)
 
+    def get_answers_helper(self, data_onehot, weights, query_idxs=None, batch_size=1000, verbose=False):
+        queries = self.queries
+        if query_idxs is not None:
+            queries = queries[query_idxs]
+        queries_iterable = torch.split(queries, batch_size)
+        if verbose:
+            queries_iterable = tqdm(queries_iterable)
+
+        answers = []
+        for queries_batch in queries_iterable:
+            answers_batch = data_onehot[:, queries_batch]
+            # answers_batch[:, queries_batch == -1] = True
+            # answers_batch = answers_batch.all(axis=-1)
+            answers_batch[:, queries_batch == -1] = 1
+            answers_batch = answers_batch.prod(axis=-1)
+            answers_batch = answers_batch * weights
+            answers_batch = answers_batch.sum(0)
+            answers.append(answers_batch)
+        answers = torch.cat(answers)
+        return answers
+
     # Currently (torch=1.11.0), torch.histogramdd doesn't support CUDA operations (rewrite below if support is added)
     def get_answers(self, data, weights=None, by_workload=False, density=True, batch_size=1000):
         if self.verbose:
@@ -243,22 +264,12 @@ class KWayMarginalQMTorch(KWayMarginalQM):
             weights = np.ones(len(data))
         weights = torch.tensor(weights, dtype=torch.float).unsqueeze(-1).to(self.device)
 
-        data_onehot = torch.tensor(get_data_onehot(data)).to(self.device)
-        answers = []
-        iterable = torch.split(self.queries, batch_size)
-        if self.verbose:
-            iterable = tqdm(iterable)
-        for queries_batch in iterable:
-            answers_batch = data_onehot[:, queries_batch]
-            answers_batch[:, queries_batch == -1] = True
-            answers_batch = answers_batch.all(axis=-1)
-            answers_batch = answers_batch * weights
-            answers_batch = answers_batch.sum(0)
-            answers.append(answers_batch)
-        answers = torch.cat(answers)
+        data_onehot = torch.tensor(get_data_onehot(data), dtype=torch.float, device=self.device)
 
+        answers = self.get_answers_helper(data_onehot, weights, batch_size=batch_size, verbose=self.verbose)
         if density:
             answers = answers / weights.sum()
         if by_workload:
             answers = self.regroup_answers_by_workload(answers)
+
         return answers
