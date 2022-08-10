@@ -6,6 +6,8 @@ from collections.abc import Iterable
 from abc import ABC, abstractmethod
 from src.utils.general import get_num_queries, get_min_dtype, get_data_onehot
 
+import pdb
+
 """
 Query manager syndata class
 """
@@ -229,7 +231,7 @@ class KWayMarginalQM(BaseKWayMarginalQM):
         return W
 
 class KWayMarginalQMTorch(KWayMarginalQM):
-    def __init__(self, data, workloads, sensitivity=None, verbose=-False, device=None):
+    def __init__(self, data, workloads, device=None, sensitivity=None, verbose=-False):
         super().__init__(data, workloads, sensitivity=sensitivity, verbose=verbose)
         self.device = torch.device("cpu") if device is None else device
         self.queries = torch.tensor(self.queries).long().to(self.device)
@@ -268,8 +270,70 @@ class KWayMarginalQMTorch(KWayMarginalQM):
 
         answers = self.get_answers_helper(data_onehot, weights, batch_size=batch_size, verbose=self.verbose)
         if density:
+            pdb.set_trace()
             answers = answers / weights.sum()
         if by_workload:
             answers = self.regroup_answers_by_workload(answers)
 
+        return answers
+
+class KWayMarginalAggQMTorch(KWayMarginalQMTorch):
+    def __init__(self, data, workloads, sensitivity=None,
+                 agg_mapping=None,
+                 device=None, verbose=-False):
+        super().__init__(data, workloads, sensitivity=sensitivity, device=device, verbose=verbose)
+
+        prng = np.random.RandomState(0)
+        agg_mapping = []
+        for workload_idxs in self.workload_idxs:
+            x = np.arange(*workload_idxs)
+            for i in range(9):
+                if i + 1 > len(x):
+                    continue
+                y = prng.choice(x, size=(i + 1), replace=False)
+                agg_mapping.append(y.tolist())
+                # agg_mapping += prng.choice(len(self.queries), size=(10000, i + 1), replace=True).tolist()
+
+            # pdb.set_trace()
+
+        prng = np.random.RandomState(0)
+        agg_mapping = []
+        for i in range(9):
+            agg_mapping += prng.choice(len(self.queries), size=(10000, i + 1), replace=True).tolist()
+
+        self.agg_mapping = None
+        self._setup_agg_mapping(agg_mapping)
+
+    def _setup_agg_mapping(self, agg_mapping):
+        agg_mapping_k = np.array([len(x) for x in agg_mapping])
+        idxs = agg_mapping_k.argsort()
+        agg_mapping, agg_mapping_k = np.array(agg_mapping, dtype=object)[idxs].tolist(), agg_mapping_k[idxs]
+        max_k = np.max(agg_mapping_k)
+
+        idxs = np.unique(np.concatenate(agg_mapping))
+        self.filter_queries(idxs)
+        idxs_dict = {x: i for i, x in enumerate(idxs)}
+        agg_mapping = [[idxs_dict[x] for x in y] for y in agg_mapping]
+
+        agg_mapping = np.array(agg_mapping, dtype=object)
+        self.agg_mapping = -np.ones((len(agg_mapping), max_k), dtype=int)
+        for k in np.unique(agg_mapping_k):
+            mask = agg_mapping_k == k
+            self.agg_mapping[mask, :k] = np.stack(agg_mapping[mask])
+        self.agg_mapping = torch.tensor(self.agg_mapping, device=self.device)
+
+        self.num_queries = len(self.agg_mapping)
+
+    def get_answers_helper(self, data_onehot, weights, query_idxs=None, batch_size=1000, verbose=False):
+        agg_mapping = self.agg_mapping
+        if query_idxs is not None:
+            agg_mapping = agg_mapping[query_idxs]
+        query_idxs = agg_mapping.unique()
+        agg_mapping = torch.searchsorted(query_idxs, agg_mapping)
+
+        answers = super().get_answers_helper(data_onehot, weights, query_idxs=query_idxs,
+                                             batch_size=batch_size, verbose=verbose)
+        answers[query_idxs == -1] = 0
+        answers = answers[agg_mapping]
+        answers = answers.sum(-1)
         return answers
