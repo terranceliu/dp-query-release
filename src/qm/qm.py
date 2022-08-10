@@ -270,7 +270,6 @@ class KWayMarginalQMTorch(KWayMarginalQM):
 
         answers = self.get_answers_helper(data_onehot, weights, batch_size=batch_size, verbose=self.verbose)
         if density:
-            pdb.set_trace()
             answers = answers / weights.sum()
         if by_workload:
             answers = self.regroup_answers_by_workload(answers)
@@ -288,18 +287,10 @@ class KWayMarginalAggQMTorch(KWayMarginalQMTorch):
         for workload_idxs in self.workload_idxs:
             x = np.arange(*workload_idxs)
             for i in range(9):
-                if i + 1 > len(x):
+                if i + 1 > len(x) - 1:
                     continue
                 y = prng.choice(x, size=(i + 1), replace=False)
                 agg_mapping.append(y.tolist())
-                # agg_mapping += prng.choice(len(self.queries), size=(10000, i + 1), replace=True).tolist()
-
-            # pdb.set_trace()
-
-        prng = np.random.RandomState(0)
-        agg_mapping = []
-        for i in range(9):
-            agg_mapping += prng.choice(len(self.queries), size=(10000, i + 1), replace=True).tolist()
 
         self.agg_mapping = None
         self._setup_agg_mapping(agg_mapping)
