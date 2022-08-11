@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 from torch import optim
 
-from src.qm import KWayMarginalQM
+from src.qm import KWayMarginalQMTorch, KWayMarginalSetQMTorch
 from src.algo.base import IterativeAlgorithmTorch
 
 class IterativeAlgoNonDP(IterativeAlgorithmTorch):
@@ -37,7 +37,7 @@ class IterativeAlgoNonDP(IterativeAlgorithmTorch):
             self.schedulerG = optim.lr_scheduler.CosineAnnealingLR(self.optimizerG, self.T, eta_min=self.eta_min)
 
     def _valid_qm(self):
-        return (KWayMarginalQM)
+        return (KWayMarginalQMTorch, KWayMarginalSetQMTorch)
 
     def _sample(self, scores):
         pass

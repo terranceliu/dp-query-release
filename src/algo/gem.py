@@ -7,7 +7,7 @@ from torch import optim
 from src.qm import KWayMarginalQM
 from src.algo.base import IterativeAlgorithmTorch
 from src.utils.mechanisms import exponential_mech, gaussian_mech
-l
+
 class IterAlgoGEMBase(IterativeAlgorithmTorch):
     def __init__(self, G, T, eps0,
                  alpha=0.5, default_dir=None, verbose=False, seed=None,
