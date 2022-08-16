@@ -2,7 +2,7 @@ import torch
 import pickle
 from src.qm import KWayMarginalSetQMTorch
 from src.utils import get_args, get_data, get_errors
-from src.syndata import NeuralNetworkGenerator
+from src.syndata import FixedGenerator
 from src.algo.nondp import IterativeAlgoNonDP
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -22,8 +22,7 @@ model_save_dir = './save/Gen_NN_NonDP/{}/{}_{}_{}/{}_{}_{}/'.format(args.dataset
                                                                     args.marginal, args.workload, args.workload_seed,
                                                                     args.dim, args.K, args.resample)
 
-G = NeuralNetworkGenerator(query_manager, K=args.K, device=device, init_seed=args.test_seed,
-                           embedding_dim=args.dim, gen_dims=None, resample=args.resample)
+G = FixedGenerator(query_manager, K=args.K, device=device, init_seed=args.test_seed)
 algo = IterativeAlgoNonDP(G, args.T,
                           default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
                           loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min,
@@ -37,3 +36,11 @@ algo.fit(true_answers)
 syn_answers = G.get_qm_answers()
 errors = get_errors(true_answers, syn_answers)
 print(errors)
+
+syndata = G.get_syndata(args.num_samples)
+syndata_answers = query_manager.get_answers(syndata)
+errors = get_errors(true_answers, syndata_answers)
+print(errors)
+
+import pdb
+pdb.set_trace()

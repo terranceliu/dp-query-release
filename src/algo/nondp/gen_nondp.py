@@ -65,18 +65,28 @@ class IterativeAlgoNonDP(IterativeAlgorithmTorch):
             if self.verbose and self.log_freq > 0:
                 pbar.set_description('Max Error: {:.6}'.format(errors.max()))
 
-            for _ in range(self.max_iters):
-                self.optimizerG.zero_grad()
+            # if t > 200:
+            #     errors = (true_answers - syn_answers).abs()
+            #     print(errors.abs().sort()[0][:-10])
+            #     print(errors.abs().max().item())
+            #     print(errors.abs().mean().item())
+            #     import pdb
+            #     pdb.set_trace()
 
-                if self.sample_by_error:
+            if self.sample_by_error:
+                for _ in range(self.max_iters):
+                    self.optimizerG.zero_grad()
                     idxs = torch.multinomial(p, num_samples=self.max_idxs, replacement=True)
-                else:
-                    idxs = torch.multinomial(torch.ones_like(p) / len(p),
-                                             num_samples=np.minimum(self.max_idxs, len(p)), replacement=False)
-                loss = self._get_loss(idxs)
-
-                loss.backward()
-                self.optimizerG.step()
+                    loss = self._get_loss(idxs)
+                    loss.backward()
+                    self.optimizerG.step()
+            else:
+                idxs_all = torch.randperm(len(errors))
+                for idxs in torch.split(idxs_all, self.max_idxs):
+                    self.optimizerG.zero_grad()
+                    loss = self._get_loss(idxs)
+                    loss.backward()
+                    self.optimizerG.step()
 
             if self.schedulerG is not None:
                 self.schedulerG.step()

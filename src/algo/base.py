@@ -4,7 +4,6 @@ Base class for iterative algorithms
 import os
 import time
 import torch
-import pickle
 import numpy as np
 from abc import ABC, abstractmethod
 
