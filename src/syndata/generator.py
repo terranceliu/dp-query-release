@@ -76,9 +76,7 @@ class Generator(ABC):
         pass
 
     def _setup(self):
-        df_domain = get_domain_rows(self.domain, self.discrete_columns)
-        self.transformer = DataTransformer()
-        self.transformer.fit(df_domain, self.discrete_columns)
+        self.transformer = DataTransformer(self.domain)
         self.data_dim = self.transformer.output_dimensions
         self._setup_generator()
 
