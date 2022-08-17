@@ -1,6 +1,7 @@
 import os
 import json
 import pickle
+import argparse
 import pandas as pd
 
 from ppmf import GeoLocation, select_ppmf_geolocation, get_census_schema_and_data, build_census_queries
@@ -8,7 +9,17 @@ from src.data_preprocessor import DataPreprocessingConfig, DataPreprocessor
 
 import pdb
 
-geoid = "42003140100"
+"""
+Census2010_Current
+https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress?form
+42003140100 - CMU
+42029302101 - Exton
+"""
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--geoid', type=str)
+args = parser.parse_args()
+geoid = args.geoid
 
 data_dir = './datasets/raw/ppmf/by_state/'
 data_path_base = os.path.join(data_dir, 'ppmf_{}.csv')
