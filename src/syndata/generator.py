@@ -50,9 +50,9 @@ class Fixed(Module):
         return self.syndata.weight
 
 class Generator(ABC):
-    def __init__(self, qm,
-                 cont_columns=[], agg_mapping={},
-                 K=1000, query_bs=10000, device=None, init_seed=None,
+    def __init__(self, qm, K=1000, query_bs=10000,
+                 agg_mapping={},
+                 device=None, init_seed=None,
                  ):
         self.qm = qm
         self.agg_mapping = agg_mapping
@@ -63,8 +63,6 @@ class Generator(ABC):
 
         self.queries = self.qm.queries
         self.domain = self.qm.domain
-        self.cont_columns = cont_columns
-        self.discrete_columns = [col for col in self.domain.attrs if col not in self.cont_columns]
         self._setup()
 
     @abstractmethod
@@ -170,14 +168,14 @@ class FixedGenerator(Generator):
         return self.generator(None)
 
 class NeuralNetworkGenerator(Generator):
-    def __init__(self, qm,
-                 cont_columns=[], agg_mapping={},
-                 K=1000, query_bs=10000, device=None, init_seed=None,
+    def __init__(self, qm, K=1000, query_bs=10000,
+                 agg_mapping={},
                  embedding_dim=128, gen_dims=None, resample=False,
+                 device=None, init_seed=None,
                  ):
         self.embedding_dim = embedding_dim
         self.gen_dims = [2 * embedding_dim, 2 * embedding_dim] if gen_dims is None else gen_dims
-        super().__init__(qm, cont_columns, agg_mapping, K, query_bs, device, init_seed=init_seed)
+        super().__init__(qm, K=K, query_bs=query_bs, agg_mapping=agg_mapping, device=device, init_seed=init_seed)
 
         self.resample = resample
         self.z_mean = torch.zeros(self.K, self.embedding_dim, device=self.device)
