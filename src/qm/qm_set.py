@@ -1,25 +1,42 @@
+import itertools
 import torch
 import numpy as np
 from tqdm import tqdm
 from src.qm.qm import KWayMarginalQMTorch
-
+import pdb
 class KWayMarginalSetQMTorch(KWayMarginalQMTorch):
-    def __init__(self, data, queries, sensitivity=None, device=None, verbose=-False):
+    def __init__(self, data, queries, sensitivity=None, device=None, verbose=False):
         workloads = self._get_workloads(queries)
+        self._queries = queries
+
         super().__init__(data, workloads, sensitivity=sensitivity, device=device, verbose=verbose)
 
-        iter_queries = queries
+    def _setup_queries(self):
+        super()._setup_queries()
+
+        queries = self._queries
+        del self._queries
+        self.num_queries = len(queries)
+
+        _queries = {}
+        for attr in self.domain.attrs:
+            x = [query[attr] if attr in query.keys() else np.array([]) for query in queries]
+            x = list(zip(*itertools.zip_longest(*x, fillvalue=-1)))
+            x = np.array(list(x))
+            _queries[attr] = x
+        queries = _queries
+
+        iter_queries = queries.items()
         if self.verbose:
             iter_queries = tqdm(iter_queries)
 
-        max_k = np.max([len(w) for w in workloads])
-        self.queries = torch.zeros((len(queries), max_k, self.dim), dtype=bool, device=self.device)
-        for query_idx, query in enumerate(iter_queries):
-            for i, (attr, vals) in enumerate(query.items()):
-                idxs = np.array(self.col_pos_map[attr])[vals]
-                self.queries[query_idx, i, idxs] = True
-
-        self.num_queries = len(self.queries)
+        shape = (self.num_queries, len(queries), self.dim + 1)
+        self.queries = torch.zeros(shape, dtype=bool, device=self.device)
+        for i, (attr, vals) in enumerate(iter_queries):
+            idxs = torch.tensor(self.col_pos_map[attr] + [self.dim], device=self.device)
+            idxs = idxs[vals]
+            self.queries[:, i] = self.queries[:, i].scatter_(1, idxs, True)
+        self.queries = self.queries[:, :, :-1]
 
     def _get_workloads(self, queries):
         workloads = [list(q.keys()) for q in queries]

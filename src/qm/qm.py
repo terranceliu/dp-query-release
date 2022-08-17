@@ -231,9 +231,12 @@ class KWayMarginalQM(BaseKWayMarginalQM):
         return W
 
 class KWayMarginalQMTorch(KWayMarginalQM):
-    def __init__(self, data, workloads, device=None, sensitivity=None, verbose=-False):
-        super().__init__(data, workloads, sensitivity=sensitivity, verbose=verbose)
+    def __init__(self, data, workloads, device=None, sensitivity=None, verbose=False):
         self.device = torch.device("cpu") if device is None else device
+        super().__init__(data, workloads, sensitivity=sensitivity, verbose=verbose)
+
+    def _setup_queries(self):
+        super()._setup_queries()
         self.queries = torch.tensor(self.queries).long().to(self.device)
 
     def get_answers_helper(self, data_onehot, weights, query_idxs=None, batch_size=1000, verbose=False):
