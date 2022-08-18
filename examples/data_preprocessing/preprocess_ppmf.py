@@ -14,6 +14,7 @@ Census2010_Current
 https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress?form
 42003140100 - CMU
 42029302101 - Exton
+42071011804 - Lancaster (random)
 """
 
 parser = argparse.ArgumentParser()
