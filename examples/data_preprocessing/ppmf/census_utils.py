@@ -33,10 +33,10 @@ def get_census_schema_and_data(ppmf) -> Tuple[DataSchema, pd.DataFrame]:
     - CENRACE must take on one of the 63 possible values of `CensusRace`
     - CENHISP must take a value in `["HLO", "Not HLO"]`
     """
-    for col in ["TABBLKST", "TABBLKCOU", "TABTRACTCE"]:
-        assert np.all(
-            ppmf[col] == ppmf[col].iloc[0]
-        ), "All data must be from the same census tract"
+    # for col in ["TABBLKST", "TABBLKCOU", "TABTRACTCE"]:
+    #     assert np.all(
+    #         ppmf[col] == ppmf[col].iloc[0]
+    #     ), "All data must be from the same census tract"
 
     blocks = np.unique(ppmf["TABBLK"])
 

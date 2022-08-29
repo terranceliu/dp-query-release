@@ -28,17 +28,25 @@ data_path_base = os.path.join(data_dir, 'ppmf_{}.csv')
 geolocation = GeoLocation.parse_geoid(geoid)
 state_id = geolocation.state_id
 
-ppmf = pd.read_csv(data_path_base.format(state_id))
-ppmf = select_ppmf_geolocation(ppmf, geolocation)
-schema, ppmf = get_census_schema_and_data(ppmf)
+ppmf_orig = pd.read_csv(data_path_base.format(state_id))
+
+# state first
+schema, ppmf = get_census_schema_and_data(ppmf_orig)
 
 queries = build_census_queries(schema)
+for q in queries:
+    if 'TABBLK' in q.keys():
+        del q['TABBLK']
+queries = [q for q in queries if len(q) > 0]
 
 config = {}
 config['attr_cat'] = schema.column_names
 config['attr_num'] = []
 config['mapping_cat_domain'] = dict(zip(schema.column_names, schema.column_values))
 config['mapping_num_bins'] = {}
+
+config['attr_cat'] = [attr for attr in config['attr_cat'] if attr != 'TABBLK']
+del config['mapping_cat_domain']['TABBLK']
 
 data_config = DataPreprocessingConfig(config)
 dt = DataPreprocessor(data_config)
@@ -52,7 +60,27 @@ for query in queries:
         transformed = encoder.transform(values)
         query[key] = transformed
 
-dataset_name = 'ppmf_{}'.format(geoid)
+dataset_name = 'ppmf_state_schema_{}'.format(state_id)
+
+csv_path = './datasets/{}.csv'.format(dataset_name)
+df_preprocessed.to_csv(csv_path, index=False)
+
+json_path = './datasets/domain/{}-domain.json'.format(dataset_name)
+with open(json_path, 'w') as f:
+    json.dump(domain, f)
+
+queries_path = './datasets/queries/{}-set.pkl'.format(dataset_name)
+with open(queries_path, 'wb') as handle:
+    pickle.dump(queries, handle)
+
+# tract
+
+ppmf = select_ppmf_geolocation(ppmf_orig, geolocation)
+_, ppmf = get_census_schema_and_data(ppmf_orig)
+df_preprocessed = dt.transform([ppmf])
+
+dataset_name = 'ppmf_state_schema_{}'.format(geoid)
+
 csv_path = './datasets/{}.csv'.format(dataset_name)
 df_preprocessed.to_csv(csv_path, index=False)
 
