@@ -19,6 +19,7 @@ https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress?form
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--geoid', type=str)
+parser.add_argument('--ignore_block', action='store_true')
 args = parser.parse_args()
 geoid = args.geoid
 
@@ -40,6 +41,15 @@ config['attr_num'] = []
 config['mapping_cat_domain'] = dict(zip(schema.column_names, schema.column_values))
 config['mapping_num_bins'] = {}
 
+if args.ignore_block:
+    config['attr_cat'] = [attr for attr in config['attr_cat'] if attr != 'TABBLK']
+    del config['mapping_cat_domain']['TABBLK']
+
+    for q in queries:
+        if 'TABBLK' in q.keys():
+            del q['TABBLK']
+    queries = [q for q in queries if len(q) > 0]
+
 data_config = DataPreprocessingConfig(config)
 dt = DataPreprocessor(data_config)
 
@@ -53,6 +63,9 @@ for query in queries:
         query[key] = transformed
 
 dataset_name = 'ppmf_{}'.format(geoid)
+if args.ignore_block:
+    dataset_name += '-ignore_block'
+
 csv_path = './datasets/{}.csv'.format(dataset_name)
 df_preprocessed.to_csv(csv_path, index=False)
 

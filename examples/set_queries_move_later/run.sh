@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DATASET=ppmf_42003140100
+DATASET=ppmf_42003140100 # -ignore_block
 
 K=1000
 

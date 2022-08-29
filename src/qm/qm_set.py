@@ -38,6 +38,8 @@ class KWayMarginalSetQMTorch(KWayMarginalQMTorch):
             self.queries[:, i] = self.queries[:, i].scatter_(1, idxs, True)
         self.queries = self.queries[:, :, :-1]
 
+        self.queries = torch.unique(self.queries, dim=0)
+
     def _get_workloads(self, queries):
         workloads = [list(q.keys()) for q in queries]
         workloads = np.array(workloads, dtype=object)
