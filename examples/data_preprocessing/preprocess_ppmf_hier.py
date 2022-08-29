@@ -20,13 +20,10 @@ https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress?form
 parser = argparse.ArgumentParser()
 parser.add_argument('--geoid', type=str)
 args = parser.parse_args()
-geoid = args.geoid
+state_id = args.geoid[:2]
 
 data_dir = './datasets/raw/ppmf/by_state/'
 data_path_base = os.path.join(data_dir, 'ppmf_{}.csv')
-
-geolocation = GeoLocation.parse_geoid(geoid)
-state_id = geolocation.state_id
 
 ppmf_orig = pd.read_csv(data_path_base.format(state_id))
 
@@ -60,7 +57,7 @@ for query in queries:
         transformed = encoder.transform(values)
         query[key] = transformed
 
-dataset_name = 'ppmf_state_schema_{}'.format(state_id)
+dataset_name = 'ppmf_hier_{}'.format(state_id)
 
 csv_path = './datasets/{}.csv'.format(dataset_name)
 df_preprocessed.to_csv(csv_path, index=False)
@@ -73,22 +70,25 @@ queries_path = './datasets/queries/{}-set.pkl'.format(dataset_name)
 with open(queries_path, 'wb') as handle:
     pickle.dump(queries, handle)
 
-# tract
+# county and tract
+for i in [5, 100]:
+    geoid = args.geoid[:i]
+    geolocation = GeoLocation.parse_geoid(geoid)
 
-ppmf = select_ppmf_geolocation(ppmf_orig, geolocation)
-_, ppmf = get_census_schema_and_data(ppmf)
-df_preprocessed = dt.transform([ppmf])
+    ppmf = select_ppmf_geolocation(ppmf_orig, geolocation)
+    _, ppmf = get_census_schema_and_data(ppmf)
+    df_preprocessed = dt.transform([ppmf])
 
-dataset_name = 'ppmf_state_schema_{}'.format(geoid)
+    dataset_name = 'ppmf_hier_{}'.format(geoid)
 
-csv_path = './datasets/{}.csv'.format(dataset_name)
-df_preprocessed.to_csv(csv_path, index=False)
+    csv_path = './datasets/{}.csv'.format(dataset_name)
+    df_preprocessed.to_csv(csv_path, index=False)
 
-json_path = './datasets/domain/{}-domain.json'.format(dataset_name)
-with open(json_path, 'w') as f:
-    json.dump(domain, f)
+    json_path = './datasets/domain/{}-domain.json'.format(dataset_name)
+    with open(json_path, 'w') as f:
+        json.dump(domain, f)
 
-queries_path = './datasets/queries/{}-set.pkl'.format(dataset_name)
-with open(queries_path, 'wb') as handle:
-    pickle.dump(queries, handle)
+    queries_path = './datasets/queries/{}-set.pkl'.format(dataset_name)
+    with open(queries_path, 'wb') as handle:
+        pickle.dump(queries, handle)
 
