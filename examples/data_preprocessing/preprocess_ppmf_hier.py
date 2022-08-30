@@ -2,6 +2,7 @@ import os
 import json
 import pickle
 import argparse
+import numpy as np
 import pandas as pd
 
 from ppmf import GeoLocation, select_ppmf_geolocation, get_census_schema_and_data, build_census_queries
@@ -15,17 +16,40 @@ https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress?form
 42003140100 - CMU
 42029302101 - Exton
 42071011804 - Lancaster (random)
-"""
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--geoid', type=str)
-args = parser.parse_args()
-state_id = args.geoid[:2]
+Random tracts:
+56037971000 - Wyoming (56)
+11001004701 - DC (11)
+50007001000 - Vermont (50)
+38015011101 - North Dakota (38)
+02090001800 - Alaska (02)
+"""
 
 data_dir = './datasets/raw/ppmf/by_state/'
 data_path_base = os.path.join(data_dir, 'ppmf_{}.csv')
 
-ppmf_orig = pd.read_csv(data_path_base.format(state_id))
+parser = argparse.ArgumentParser()
+parser.add_argument('--geoid', type=str, default=None, help='tract code')
+parser.add_argument('--stateid', type=str, default=None, help='selects random tract within state')
+args = parser.parse_args()
+assert (args.geoid is None) != (args.stateid is None)
+
+if args.geoid is not None:
+    geoid_tract = args.geoid
+    state_id = geoid_tract[:2]
+    ppmf_orig = pd.read_csv(data_path_base.format(state_id))
+else:
+    state_id = args.stateid
+    ppmf_orig = pd.read_csv(data_path_base.format(state_id))
+
+    ppmf_orig['geoid'] = ''
+    ppmf_orig['geoid'] += ppmf_orig['TABBLKST'].apply(lambda x: str(x).zfill(2))
+    ppmf_orig['geoid'] += ppmf_orig['TABBLKCOU'].apply(lambda x: str(x).zfill(3))
+    ppmf_orig['geoid'] += ppmf_orig['TABTRACTCE'].apply(lambda x: str(x).zfill(6))
+    all_geoids = ppmf_orig['geoid'].unique()
+    geoid_tract = np.random.choice(all_geoids)
+
+print(geoid_tract)
 
 # state first
 schema, ppmf = get_census_schema_and_data(ppmf_orig)
@@ -72,7 +96,7 @@ with open(queries_path, 'wb') as handle:
 
 # county and tract
 for i in [5, 100]:
-    geoid = args.geoid[:i]
+    geoid = geoid_tract[:i]
     geolocation = GeoLocation.parse_geoid(geoid)
 
     ppmf = select_ppmf_geolocation(ppmf_orig, geolocation)

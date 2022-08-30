@@ -1,8 +1,12 @@
 import os
 import csv
+import argparse
 from tqdm import tqdm
 
-state_code = '42'
+parser = argparse.ArgumentParser()
+parser.add_argument('--stateid', type=str)
+args = parser.parse_args()
+state_code = args.stateid
 
 path = './datasets/raw/ppmf/2020-05-27-ppmf.csv'
 save_dir = './datasets/raw/ppmf/by_state/'
