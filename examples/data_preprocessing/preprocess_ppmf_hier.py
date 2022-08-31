@@ -31,6 +31,7 @@ data_path_base = os.path.join(data_dir, 'ppmf_{}.csv')
 parser = argparse.ArgumentParser()
 parser.add_argument('--geoid', type=str, default=None, help='tract code')
 parser.add_argument('--stateid', type=str, default=None, help='selects random tract within state')
+parser.add_argument('--blocks', action='store_true', help='generates files for all blocks')
 args = parser.parse_args()
 assert (args.geoid is None) != (args.stateid is None)
 
@@ -115,4 +116,31 @@ for i in [5, 100]:
     queries_path = './datasets/queries/{}-set.pkl'.format(dataset_name)
     with open(queries_path, 'wb') as handle:
         pickle.dump(queries, handle)
+
+if args.blocks:
+    geolocation = GeoLocation.parse_geoid(geoid_tract)
+    ppmf_tract = select_ppmf_geolocation(ppmf_orig, geolocation)
+    print(ppmf_tract.groupby('TABBLK').size())
+    all_blockids = ppmf_tract['TABBLK'].unique()
+    all_blockids = [str(x).zfill(4) for x in all_blockids]
+    for blockid in all_blockids:
+        geoid = geoid_tract + blockid
+        geolocation = GeoLocation.parse_geoid(geoid)
+
+        ppmf = select_ppmf_geolocation(ppmf_orig, geolocation)
+        _, ppmf = get_census_schema_and_data(ppmf)
+        df_preprocessed = dt.transform([ppmf])
+
+        dataset_name = 'ppmf_hier_{}'.format(geoid)
+
+        csv_path = './datasets/{}.csv'.format(dataset_name)
+        df_preprocessed.to_csv(csv_path, index=False)
+
+        json_path = './datasets/domain/{}-domain.json'.format(dataset_name)
+        with open(json_path, 'w') as f:
+            json.dump(domain, f)
+
+        queries_path = './datasets/queries/{}-set.pkl'.format(dataset_name)
+        with open(queries_path, 'wb') as handle:
+            pickle.dump(queries, handle)
 
