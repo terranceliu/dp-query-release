@@ -49,6 +49,7 @@ if not os.path.exists(base_dir):
 parser = argparse.ArgumentParser()
 parser.add_argument('--geoid', type=str, default=None, help='tract code')
 parser.add_argument('--stateid', type=str, default=None, help='selects random tract within state')
+parser.add_argument('--seed', type=int, default=0, help='seed for selecting random tract')
 parser.add_argument('--blocks', action='store_true', help='generates files for all blocks')
 args = parser.parse_args()
 assert (args.geoid is None) != (args.stateid is None)
@@ -66,7 +67,9 @@ else:
     ppmf_orig['geoid'] += ppmf_orig['TABBLKCOU'].apply(lambda x: str(x).zfill(3))
     ppmf_orig['geoid'] += ppmf_orig['TABTRACTCE'].apply(lambda x: str(x).zfill(6))
     all_geoids = ppmf_orig['geoid'].unique()
-    geoid_tract = np.random.choice(all_geoids)
+
+    prng = np.random.RandomState(args.seed)
+    geoid_tract = prng.choice(all_geoids)
 
 print(geoid_tract)
 
