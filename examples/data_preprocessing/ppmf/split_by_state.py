@@ -5,6 +5,7 @@ from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--stateid', type=str)
+parser.add_argument('--remove_existing', action='store_true')
 args = parser.parse_args()
 state_code = args.stateid
 
@@ -14,7 +15,10 @@ save_path_base = os.path.join(save_dir, 'ppmf_{}.csv')
 save_path = save_path_base.format(state_code)
 
 if os.path.exists(save_path):
-    os.remove(save_path)
+    if args.remove_existing:
+        os.remove(save_path)
+    else:
+        assert False, 'file exists'
 
 with open(path, 'r') as read_obj:
     reader = csv.reader(read_obj)
