@@ -25,6 +25,26 @@ Random tracts:
 02090001800 - Alaska (02)
 """
 
+def get_dt(schema):
+    config = {}
+    config['attr_cat'] = schema.column_names
+    config['attr_num'] = []
+    config['mapping_cat_domain'] = dict(zip(schema.column_names, schema.column_values))
+    config['mapping_num_bins'] = {}
+
+    data_config = DataPreprocessingConfig(config)
+    dt = DataPreprocessor(data_config)
+    return dt
+
+def get_queries(schema, dt):
+    queries = build_census_queries(schema)
+    for query in queries:
+        for key, values in query.items():
+            encoder = dt.encoders[key]
+            transformed = encoder.transform(values)
+            query[key] = transformed
+    return queries
+
 def save_files(dataset_name, df_preprocessed, domain, queries):
     csv_path = './datasets/ppmf/{}.csv'.format(dataset_name)
     df_preprocessed.to_csv(csv_path, index=False)
@@ -37,14 +57,7 @@ def save_files(dataset_name, df_preprocessed, domain, queries):
     with open(queries_path, 'wb') as handle:
         pickle.dump(queries, handle)
 
-data_dir = './datasets/raw/ppmf/by_state/'
-data_path_base = os.path.join(data_dir, 'ppmf_{}.csv')
 
-base_dir = './datasets/ppmf'
-if not os.path.exists(base_dir):
-    os.makedirs(base_dir)
-    os.makedirs(os.path.join(base_dir, 'domain'))
-    os.makedirs(os.path.join(base_dir, 'queries'))
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--geoid', type=str, default=None, help='tract code')
@@ -53,6 +66,15 @@ parser.add_argument('--seed', type=int, default=0, help='seed for selecting rand
 parser.add_argument('--blocks', action='store_true', help='generates files for all blocks')
 args = parser.parse_args()
 assert (args.geoid is None) != (args.stateid is None)
+
+data_dir = './datasets/raw/ppmf/by_state/'
+data_path_base = os.path.join(data_dir, 'ppmf_{}.csv')
+
+base_dir = './datasets/ppmf'
+if not os.path.exists(base_dir):
+    os.makedirs(base_dir)
+    os.makedirs(os.path.join(base_dir, 'domain'))
+    os.makedirs(os.path.join(base_dir, 'queries'))
 
 if args.geoid is not None:
     geoid_tract = args.geoid
@@ -73,50 +95,50 @@ else:
 
 print(geoid_tract)
 
-# state first
-schema, ppmf = get_census_schema_and_data(ppmf_orig)
+# state (remove block)
+ppmf = ppmf_orig.copy()
+ppmf['TABBLK'] = -1
 
-queries = build_census_queries(schema)
-# for q in queries:
-#     if 'TABBLK' in q.keys():
-#         del q['TABBLK']
-# queries = [q for q in queries if len(q) > 0]
-
-config = {}
-config['attr_cat'] = schema.column_names
-config['attr_num'] = []
-config['mapping_cat_domain'] = dict(zip(schema.column_names, schema.column_values))
-config['mapping_num_bins'] = {}
-
-# config['attr_cat'] = [attr for attr in config['attr_cat'] if attr != 'TABBLK']
-# del config['mapping_cat_domain']['TABBLK']
-
-data_config = DataPreprocessingConfig(config)
-dt = DataPreprocessor(data_config)
+schema, ppmf = get_census_schema_and_data(ppmf)
+dt = get_dt(schema)
 
 df_preprocessed = dt.fit_transform([ppmf])
 domain = dt.get_domain()
+queries = get_queries(schema, dt)
+dataset_name = 'ppmf_{}'.format(state_id)
+save_files(dataset_name, df_preprocessed, domain, queries)
 
-for query in queries:
-    for key, values in query.items():
-        encoder = dt.encoders[key]
-        transformed = encoder.transform(values)
-        query[key] = transformed
+
+# county (remove block)
+geoid = geoid_tract[:5]
+geolocation = GeoLocation.parse_geoid(geoid)
+ppmf = select_ppmf_geolocation(ppmf_orig, geolocation)
+ppmf['TABBLK'] = -1
+
+schema, ppmf = get_census_schema_and_data(ppmf)
+dt = get_dt(schema)
+
+df_preprocessed = dt.fit_transform([ppmf])
+domain = dt.get_domain()
+queries = get_queries(schema, dt)
 
 dataset_name = 'ppmf_{}'.format(state_id)
 save_files(dataset_name, df_preprocessed, domain, queries)
 
-# county and tract
-for i in [5, 100]:
-    geoid = geoid_tract[:i]
-    geolocation = GeoLocation.parse_geoid(geoid)
 
-    ppmf = select_ppmf_geolocation(ppmf_orig, geolocation)
-    _, ppmf = get_census_schema_and_data(ppmf)
-    df_preprocessed = dt.transform([ppmf])
+# tract
+geolocation = GeoLocation.parse_geoid(geoid_tract)
+ppmf = select_ppmf_geolocation(ppmf_orig, geolocation)
 
-    dataset_name = 'ppmf_{}'.format(geoid)
-    save_files(dataset_name, df_preprocessed, domain, queries)
+schema, ppmf = get_census_schema_and_data(ppmf)
+dt = get_dt(schema)
+
+df_preprocessed = dt.fit_transform([ppmf])
+domain = dt.get_domain()
+queries = get_queries(schema, dt)
+
+dataset_name = 'ppmf_{}'.format(state_id)
+save_files(dataset_name, df_preprocessed, domain, queries)
 
 if args.blocks:
     geolocation = GeoLocation.parse_geoid(geoid_tract)
@@ -127,11 +149,25 @@ if args.blocks:
     for blockid in all_blockids:
         geoid = geoid_tract + blockid
         geolocation = GeoLocation.parse_geoid(geoid)
-
         ppmf = select_ppmf_geolocation(ppmf_orig, geolocation)
-        _, ppmf = get_census_schema_and_data(ppmf)
-        df_preprocessed = dt.transform([ppmf])
 
-        dataset_name = 'ppmf_{}'.format(geoid)
+        schema, ppmf = get_census_schema_and_data(ppmf_orig)
+        dt = get_dt(schema)
+
+        df_preprocessed = dt.fit_transform([ppmf])
+        domain = dt.get_domain()
+        queries = get_queries(schema, dt)
+
+        dataset_name = 'ppmf_{}'.format(state_id)
         save_files(dataset_name, df_preprocessed, domain, queries)
 
+
+# Unused code
+
+# for q in queries:
+#     if 'TABBLK' in q.keys():
+#         del q['TABBLK']
+# queries = [q for q in queries if len(q) > 0]
+
+# config['attr_cat'] = [attr for attr in config['attr_cat'] if attr != 'TABBLK']
+# del config['mapping_cat_domain']['TABBLK']
