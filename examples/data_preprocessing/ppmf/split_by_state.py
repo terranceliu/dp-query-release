@@ -29,10 +29,11 @@ with open(path, 'r') as read_obj:
         writer.writerow(header)
 
     state_idx = header.index('TABBLKST')
-    for row in tqdm(reader):
-        if row[state_idx] != state_code:
-            continue
 
-        with open(save_path, 'a') as f:
+    with open(save_path, 'a') as f:
+        for row in tqdm(reader):
+            if row[state_idx] != state_code:
+                continue
+
             writer = csv.writer(f)
             writer.writerow(row)
