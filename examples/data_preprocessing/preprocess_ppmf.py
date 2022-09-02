@@ -162,14 +162,3 @@ if args.blocks:
 
         dataset_name = 'ppmf_{}'.format(state_id)
         save_files(dataset_name, df_preprocessed, domain, queries)
-
-
-# Unused code
-
-# for q in queries:
-#     if 'TABBLK' in q.keys():
-#         del q['TABBLK']
-# queries = [q for q in queries if len(q) > 0]
-
-# config['attr_cat'] = [attr for attr in config['attr_cat'] if attr != 'TABBLK']
-# del config['mapping_cat_domain']['TABBLK']

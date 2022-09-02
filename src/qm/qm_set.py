@@ -39,6 +39,7 @@ class KWayMarginalSetQMTorch(KWayMarginalQMTorch):
         self.queries = self.queries[:, :, :-1]
 
         self.queries = torch.unique(self.queries, dim=0)
+        self.num_queries = len(queries)
 
     def _get_workloads(self, queries):
         workloads = [list(q.keys()) for q in queries]
