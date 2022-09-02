@@ -105,6 +105,7 @@ dt = get_dt(schema)
 df_preprocessed = dt.fit_transform([ppmf])
 domain = dt.get_domain()
 queries = get_queries(schema, dt)
+
 dataset_name = 'ppmf_{}'.format(state_id)
 save_files(dataset_name, df_preprocessed, domain, queries)
 
@@ -122,12 +123,13 @@ df_preprocessed = dt.fit_transform([ppmf])
 domain = dt.get_domain()
 queries = get_queries(schema, dt)
 
-dataset_name = 'ppmf_{}'.format(state_id)
+dataset_name = 'ppmf_{}'.format(geoid)
 save_files(dataset_name, df_preprocessed, domain, queries)
 
 
 # tract
-geolocation = GeoLocation.parse_geoid(geoid_tract)
+geoid = geoid_tract
+geolocation = GeoLocation.parse_geoid(geoid)
 ppmf = select_ppmf_geolocation(ppmf_orig, geolocation)
 
 schema, ppmf = get_census_schema_and_data(ppmf)
@@ -137,7 +139,7 @@ df_preprocessed = dt.fit_transform([ppmf])
 domain = dt.get_domain()
 queries = get_queries(schema, dt)
 
-dataset_name = 'ppmf_{}'.format(state_id)
+dataset_name = 'ppmf_{}'.format(geoid)
 save_files(dataset_name, df_preprocessed, domain, queries)
 
 if args.blocks:
