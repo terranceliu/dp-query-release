@@ -96,53 +96,66 @@ else:
 print(geoid_tract)
 
 # state (remove block)
-ppmf = ppmf_orig.copy()
-ppmf['TABBLK'] = -1
+geoid = state_id
+dataset_name = 'ppmf_{}'.format(geoid)
+csv_path = './datasets/ppmf/{}.csv'.format(dataset_name)
+if not os.path.exists(csv_path):
+    ppmf = ppmf_orig.copy()
+    ppmf['TABBLK'] = -1
 
-schema, ppmf = get_census_schema_and_data(ppmf)
-dt = get_dt(schema)
+    schema, ppmf = get_census_schema_and_data(ppmf)
+    dt = get_dt(schema)
 
-df_preprocessed = dt.fit_transform([ppmf])
-domain = dt.get_domain()
-queries = get_queries(schema, dt)
+    df_preprocessed = dt.fit_transform([ppmf])
+    domain = dt.get_domain()
+    queries = get_queries(schema, dt)
 
-dataset_name = 'ppmf_{}'.format(state_id)
-save_files(dataset_name, df_preprocessed, domain, queries)
+    save_files(dataset_name, df_preprocessed, domain, queries)
 
 
 # county (remove block)
 geoid = geoid_tract[:5]
-geolocation = GeoLocation.parse_geoid(geoid)
-ppmf = select_ppmf_geolocation(ppmf_orig, geolocation)
-ppmf['TABBLK'] = -1
-
-schema, ppmf = get_census_schema_and_data(ppmf)
-dt = get_dt(schema)
-
-df_preprocessed = dt.fit_transform([ppmf])
-domain = dt.get_domain()
-queries = get_queries(schema, dt)
-
 dataset_name = 'ppmf_{}'.format(geoid)
-save_files(dataset_name, df_preprocessed, domain, queries)
+csv_path = './datasets/ppmf/{}.csv'.format(dataset_name)
+if not os.path.exists(csv_path):
+    geolocation = GeoLocation.parse_geoid(geoid)
+    ppmf = select_ppmf_geolocation(ppmf_orig, geolocation)
+    ppmf['TABBLK'] = -1
+
+    schema, ppmf = get_census_schema_and_data(ppmf)
+    dt = get_dt(schema)
+
+    df_preprocessed = dt.fit_transform([ppmf])
+    domain = dt.get_domain()
+    queries = get_queries(schema, dt)
+
+    save_files(dataset_name, df_preprocessed, domain, queries)
 
 
 # tract
 geoid = geoid_tract
-geolocation = GeoLocation.parse_geoid(geoid)
-ppmf = select_ppmf_geolocation(ppmf_orig, geolocation)
-
-schema, ppmf = get_census_schema_and_data(ppmf)
-dt = get_dt(schema)
-
-df_preprocessed = dt.fit_transform([ppmf])
-domain = dt.get_domain()
-queries = get_queries(schema, dt)
-
 dataset_name = 'ppmf_{}'.format(geoid)
-save_files(dataset_name, df_preprocessed, domain, queries)
+csv_path = './datasets/ppmf/{}.csv'.format(dataset_name)
+if not os.path.exists(csv_path):
+    geolocation = GeoLocation.parse_geoid(geoid)
+    ppmf = select_ppmf_geolocation(ppmf_orig, geolocation)
+
+    schema, ppmf = get_census_schema_and_data(ppmf)
+    dt = get_dt(schema)
+
+    df_preprocessed = dt.fit_transform([ppmf])
+    domain = dt.get_domain()
+    queries = get_queries(schema, dt)
+
+    save_files(dataset_name, df_preprocessed, domain, queries)
+
+
+######
 
 if args.blocks:
+    exit() # TODO
+
+
     geolocation = GeoLocation.parse_geoid(geoid_tract)
     ppmf_tract = select_ppmf_geolocation(ppmf_orig, geolocation)
     print(ppmf_tract.groupby('TABBLK').size())
