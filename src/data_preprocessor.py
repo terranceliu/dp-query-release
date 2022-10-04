@@ -34,6 +34,9 @@ class DataPreprocessor():
 
         num_rows = max([len(x) for x in self.mapping_cat_domain.values()])
         df_domain = df.loc[:num_rows].copy()
+        if len(df_domain) < num_rows:
+            factor = np.ceil(num_rows / len(df_domain)).astype(int)
+            df_domain = pd.concat([df_domain] * factor).reset_index(drop=True)
         for attr, categories in self.mapping_cat_domain.items():
             df_domain.loc[:len(categories) - 1, attr] = categories
             df_domain.loc[len(categories) + 1:, attr] = categories[0]

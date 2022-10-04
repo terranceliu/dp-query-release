@@ -132,7 +132,6 @@ class BaseKWayMarginalQM(QueryManager):
     def filter_query_workloads(self, idxs):
         self.workloads = np.array(self.workloads)[idxs].tolist()
         self.workload_lens = np.array(self.workload_lens)[idxs].tolist()
-        self.workload_lens = np.array(self.workload_lens)[idxs].tolist()
         self.num_workloads = len(self.workloads)
 
         workload_idxs = self.workload_idxs[idxs]

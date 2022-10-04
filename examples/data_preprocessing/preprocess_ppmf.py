@@ -16,13 +16,6 @@ https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress?form
 42003140100 - CMU
 42029302101 - Exton
 42071011804 - Lancaster (random)
-
-Random tracts:
-56037971000 - Wyoming (56)
-11001004701 - DC (11)
-50007001000 - Vermont (50)
-38015011101 - North Dakota (38)
-02090001800 - Alaska (02)
 """
 
 def get_dt(schema):
@@ -57,13 +50,11 @@ def save_files(dataset_name, df_preprocessed, domain, queries):
     with open(queries_path, 'wb') as handle:
         pickle.dump(queries, handle)
 
-
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--geoid', type=str, default=None, help='tract code')
 parser.add_argument('--stateid', type=str, default=None, help='selects random tract within state')
 parser.add_argument('--seed', type=int, default=0, help='seed for selecting random tract')
-parser.add_argument('--blocks', action='store_true', help='generates files for all blocks')
+parser.add_argument('--all_tract_blocks', action='store_true', help='generates files for all blocks')
 args = parser.parse_args()
 assert (args.geoid is None) != (args.stateid is None)
 
@@ -93,7 +84,7 @@ else:
     prng = np.random.RandomState(args.seed)
     geoid_tract = prng.choice(all_geoids)
 
-print(geoid_tract)
+# print(geoid_tract)
 
 # state (remove block)
 geoid = state_id
@@ -152,10 +143,7 @@ if not os.path.exists(csv_path):
 
 ######
 
-if args.blocks:
-    exit() # TODO
-
-
+if args.all_tract_blocks:
     geolocation = GeoLocation.parse_geoid(geoid_tract)
     ppmf_tract = select_ppmf_geolocation(ppmf_orig, geolocation)
     print(ppmf_tract.groupby('TABBLK').size())
