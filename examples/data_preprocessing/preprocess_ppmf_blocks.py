@@ -37,7 +37,7 @@ def process_geolocations(geolocations, remove_block_attr=False):
 
         save_files(dataset_name, df_preprocessed, domain, queries)
 
-FACTORS = [1, 2, 4, 8, 16, 32, 64]
+FACTORS = [1, 2, 4, 8, 16] # , 32, 64]
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--stateid', type=str, default=None, help='selects random tract within state')
@@ -63,7 +63,7 @@ ppmf_orig['geoid'] += ppmf_orig['TABBLK'].apply(lambda x: str(x).zfill(4))
 
 block_sizes = ppmf_orig.groupby('geoid').size().sort_values()
 
-target_sizes = [block_sizes.max() / i for i in FACTORS] + [block_sizes.mean()] + [block_sizes.median()]
+target_sizes = [block_sizes.max() / i for i in FACTORS] + [block_sizes.mean()] # + [block_sizes.median()]
 geoids = [(block_sizes - target_size).abs().idxmin() for target_size in target_sizes]
 if len(np.unique(geoids)) != len(target_sizes):
     print("Warning [stateid: {}]: duplicate blocks".format(state_id))
