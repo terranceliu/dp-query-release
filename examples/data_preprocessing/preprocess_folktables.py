@@ -2,6 +2,7 @@ import os
 import json
 import pickle
 import shutil
+import argparse
 import itertools
 import numpy as np
 import pandas as pd
@@ -147,9 +148,16 @@ def preprocess_acs(task, state):
     with open(json_path, 'w') as f:
         json.dump(domain, f)
 
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--tasks', nargs='+')
+    parser.add_argument('--states', nargs='+')
+    return parser.parse_args()
+
 if __name__ == '__main__':
-    acs_config_data = {'tasks': ['income', 'employment', 'coverage', 'travel', 'mobility'],
-                       'states': ['CA', 'NY', 'TX', 'FL', 'PA'],
+    args = get_args()
+    acs_config_data = {'tasks': args.tasks,
+                       'states': args.states,
                        }
 
     for task, state in itertools.product(acs_config_data['tasks'], acs_config_data['states']):
