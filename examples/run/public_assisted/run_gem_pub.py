@@ -21,7 +21,7 @@ delta = 1.0 / len(data) ** 2
 eps0, rho = get_per_round_budget_zCDP(args.epsilon, delta, args.T, alpha=args.alpha)
 
 # load pretrained GEM weights
-model_public_save_dir = './save/GEM_Nondp/{}/{}_{}_{}/{}_{}_{}/'.format(args.dataset_pub,
+model_public_save_dir = './save/Gen_NN_NonDP/{}/{}_{}_{}/{}_{}_{}/'.format(args.dataset_pub,
                                                                         args.marginal, args.workload,
                                                                         args.workload_seed,
                                                                         args.dim, args.K, args.resample)
