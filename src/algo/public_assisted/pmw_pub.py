@@ -1,7 +1,7 @@
-from src.algo.mwem import MWEM
+from src.algo.mwem import MWEMSingle
 from src.qm import KWayMarginalSupportQMPublic
 
-class PMWPub(MWEM):
+class PMWPubSingle(MWEMSingle):
     def __init__(self, G, T, eps0,
                  alpha=0.5, recycle_queries=False,
                  default_dir=None, verbose=False, seed=None):
