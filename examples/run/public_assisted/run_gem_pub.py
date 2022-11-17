@@ -38,14 +38,11 @@ model_save_dir = './save/GEM_Pub/{}/{}/{}_{}_{}/{}_{}_{}/'.format(args.dataset, 
                                                                   args.marginal, args.workload, args.workload_seed,
                                                                   args.epsilon, args.T, args.alpha,
                                                                   args.K, args.resample)
-G = NeuralNetworkGenerator(query_manager, K=args.K, device=device, init_seed=args.test_seed,
-                           embedding_dim=args.dim, gen_dims=None, resample=args.resample)
 algo = IterAlgoGEM(G, args.T, eps0,
                    alpha=args.alpha, default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
                    loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min,
                    max_idxs=args.max_idxs, max_iters=args.max_iters,
                    ema_weights=args.ema_weights, ema_weights_beta=args.ema_weights_beta)
-algo.G.generator.load_state_dict(algo_nondp.G.generator.state_dict())
 
 algo.fit(true_answers)
 
