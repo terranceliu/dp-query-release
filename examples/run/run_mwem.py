@@ -43,3 +43,7 @@ syndata_answers = G.get_answers()
 # evaluate error
 errors = get_errors(true_answers, syndata_answers)
 print(errors)
+
+# save results
+args.workload = len(workloads)
+save_results("mwem.csv", './results', args, errors)

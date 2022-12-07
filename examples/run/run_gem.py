@@ -1,6 +1,6 @@
 import torch
 from src.qm import KWayMarginalQMTorch
-from src.utils import get_args, get_data, get_rand_workloads, get_errors, save_results
+from src.utils import get_args, get_data, get_rand_workloads, get_T, get_errors, save_results
 from src.utils import get_per_round_budget_zCDP
 from src.syndata import NeuralNetworkGenerator
 from src.algo import IterAlgoGEM
@@ -16,8 +16,9 @@ workloads = get_rand_workloads(data, args.workload, args.marginal, seed=args.wor
 query_manager = KWayMarginalQMTorch(data, workloads, verbose=args.verbose, device=device)
 true_answers = query_manager.get_answers(data)
 
+T = get_T(args.T, workloads)
 delta = 1.0 / len(data) ** 2
-eps0, rho = get_per_round_budget_zCDP(args.epsilon, delta, args.T, alpha=args.alpha)
+eps0, rho = get_per_round_budget_zCDP(args.epsilon, delta, T, alpha=args.alpha)
 
 model_save_dir = './save/GEM/{}/{}_{}_{}/{}_{}_{}_{}_{}/'.format(args.dataset,
                                                                  args.marginal, args.workload, args.workload_seed,
@@ -25,8 +26,8 @@ model_save_dir = './save/GEM/{}/{}_{}_{}/{}_{}_{}_{}_{}/'.format(args.dataset,
                                                                  args.K, args.resample)
 
 G = NeuralNetworkGenerator(query_manager, K=args.K, device=device, init_seed=args.test_seed,
-                           embedding_dim=args.dim, gen_dims=None, resample=args.resample)
-algo = IterAlgoGEM(G, args.T, eps0,
+                           embedding_dim=args.dim, gen_dims=[args.gen_dim] * 2, resample=args.resample)
+algo = IterAlgoGEM(G, T, eps0,
                    alpha=args.alpha, default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
                    loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min,
                    max_idxs=args.max_idxs, max_iters=args.max_iters,
@@ -40,4 +41,5 @@ syndata_answers = query_manager.get_answers(syndata)
 errors = get_errors(true_answers, syndata_answers)
 print(errors)
 
+args.workload = len(workloads)
 save_results("gem.csv", './results', args, errors)

@@ -38,4 +38,5 @@ syndata_answers = query_manager.get_answers(syndata)
 errors = get_errors(true_answers, syndata_answers)
 print(errors)
 
+args.workload = len(workloads)
 save_results("rap_softmax.csv", './results', args, errors)

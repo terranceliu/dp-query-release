@@ -44,4 +44,5 @@ errors = get_errors(true_answers, syndata_answers)
 print(errors)
 
 # save results
+args.workload = len(workloads)
 save_results("pep.csv", './results', args, errors)

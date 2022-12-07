@@ -6,11 +6,13 @@ import pandas as pd
 from src.utils import Dataset, Domain
 from src.utils.general import get_min_dtype
 
-def get_data(name, root_path='./datasets/', cols='default'):
+def get_data(name, domain_name=None, root_path='./datasets/', cols='default'):
     df_path = os.path.join(root_path, "{}.csv".format(name))
     df = pd.read_csv(df_path)
 
-    domain_path = os.path.join(root_path, "domain/{}-domain.json".format(name))
+    if domain_name is None:
+        domain_name = "domain/{}-domain.json".format(name)
+    domain_path = os.path.join(root_path, domain_name)
     config = json.load(open(domain_path))
     domain = Domain(config.keys(), config.values())
 

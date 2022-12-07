@@ -10,6 +10,8 @@ from tqdm import tqdm
 from folktables import ACSDataSource, ACSEmployment, ACSIncome, ACSPublicCoverage, ACSTravelTime, ACSMobility
 from src.data_preprocessor import DataPreprocessingConfig, DataPreprocessor
 
+import pdb
+
 RAW_DATA_DIR = './datasets/raw/folktables'
 YEAR = 2018
 HORIZON = '1-Year'
@@ -49,14 +51,18 @@ def get_acs_raw(task, state, year='2018', remove_raw_files=False, return_attrs=F
     acs_data = data_source.get_data(states=[state], download=True)
     features, target, group = ACSTask[task].df_to_numpy(acs_data)
 
-    all_attrs = ACSTask[task].features
+    all_attrs = ACSTask[task].features.copy()
     df = pd.DataFrame(features, columns=all_attrs)
-    attr_cat, attr_num = split_con_cat(all_attrs)
+
+    target_attr = ACSTask[task].target
+    all_attrs.append(target_attr)
+    df[target_attr] = target.astype(features.dtype)
 
     if remove_raw_files:
         shutil.rmtree(data_source._root_dir)
 
     if return_attrs:
+        attr_cat, attr_num = split_con_cat(all_attrs)
         return df, (attr_cat, attr_num)
     return df
 
@@ -148,11 +154,27 @@ def preprocess_acs(task, state):
     with open(json_path, 'w') as f:
         json.dump(domain, f)
 
+    # categorical-only
+    csv_path_cat = './datasets/folktables-cat_{}_{}_{}.csv'.format(task, YEAR, state)
+    os.symlink(os.path.realpath(csv_path), csv_path_cat)
+
+    for attr in config['attr_num']:
+        del domain[attr]
+    json_path_cat = './datasets/domain/folktables-cat_{}_{}_{}-domain.json'.format(task, YEAR, state)
+    with open(json_path_cat, 'w') as f:
+        json.dump(domain, f)
+
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--tasks', nargs='+')
     parser.add_argument('--states', nargs='+')
     return parser.parse_args()
+
+"""
+python examples/data_preprocessing/preprocess_folktables.py \
+--tasks income travel coverage mobility employment \
+--states CA TX FL NY PA
+"""
 
 if __name__ == '__main__':
     args = get_args()

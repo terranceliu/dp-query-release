@@ -49,5 +49,8 @@ algo.fit(true_answers)
 syndata = G.get_syndata()
 syndata_answers = query_manager.get_answers(syndata)
 errors = get_errors(true_answers, syndata_answers)
-
 print(errors)
+
+# save results
+args.workload = len(workloads)
+save_results("gem_pub.csv", './results', args, errors)

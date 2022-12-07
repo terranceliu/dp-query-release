@@ -10,7 +10,7 @@ def get_args(base, iterative, public=False):
     parser.add_argument('--workload_seed', type=int, default=0)
     # privacy args
     parser.add_argument('--epsilon', type=float, help='Privacy parameter', default=1.0)
-    parser.add_argument('--T', type=int, default=10)
+    parser.add_argument('--T', type=float, default=10)
     parser.add_argument('--alpha', type=float, default=0.5)
     # general algo args
     parser.add_argument('--verbose', action='store_true')
@@ -26,7 +26,8 @@ def get_args(base, iterative, public=False):
 
     if base == 'nn':
         parser.add_argument('--K', type=int, default=1000)
-        parser.add_argument('--dim', type=int, default=512)
+        parser.add_argument('--dim', type=int, default=16)
+        parser.add_argument('--gen_dim', type=int, default=256)
         parser.add_argument('--resample', action='store_true')
     elif base == 'fixed':
         parser.add_argument('--K', type=int, default=1000)
@@ -57,5 +58,14 @@ def get_args(base, iterative, public=False):
 
     args = parser.parse_args()
 
+    if args.T.is_integer():
+        args.T = int(args.T)
+
     print(args)
     return args
+
+def get_T(T, workloads):
+    if isinstance(T, float):
+        T = int(len(workloads) * T)
+    assert T <= len(workloads), "Number of iterations T must be <= total # workloads"
+    return T
