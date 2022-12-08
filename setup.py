@@ -9,5 +9,7 @@ setup(
     license='MIT',
     packages=['src'],
     zip_safe=False,
-    install_requires=['numpy', 'pandas', 'scipy', 'matplotlib', 'seaborn', 'tqdm', 'folktables'],
+    install_requires=['numpy', 'pandas', 'scipy', 'scikit_learn',
+                      'matplotlib', 'seaborn', 'tqdm',
+                      'folktables'],
 )
