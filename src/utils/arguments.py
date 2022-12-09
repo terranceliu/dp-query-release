@@ -10,7 +10,7 @@ def get_args(base, iterative, public=False):
     parser.add_argument('--workload_seed', type=int, default=0)
     # privacy args
     parser.add_argument('--epsilon', type=float, help='Privacy parameter', default=1.0)
-    parser.add_argument('--T', type=float, default=10)
+    parser.add_argument('--T', type=float, default=10.0)
     parser.add_argument('--alpha', type=float, default=0.5)
     # general algo args
     parser.add_argument('--verbose', action='store_true')

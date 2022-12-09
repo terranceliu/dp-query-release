@@ -1,20 +1,27 @@
+import sys
 import torch
 from src.qm import KWayMarginalQMTorch
-from src.utils import get_args, get_data, get_rand_workloads, get_T, get_errors, save_results
+from src.utils import get_args, get_data, get_rand_workloads, get_cached_true_answers, get_T, \
+    get_errors, save_results, check_existing_results
 from src.utils import get_per_round_budget_zCDP
 from src.syndata import NeuralNetworkGenerator
 from src.algo import IterAlgoGEM
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 args = get_args(base='nn', iterative='gem')
+results_fn = 'gem.csv'
 
 data = get_data(args.dataset)
 
 workloads = get_rand_workloads(data, args.workload, args.marginal, seed=args.workload_seed)
+args.workload = len(workloads)
+
+if check_existing_results(results_fn, args):
+    sys.exit("Exiting... run previously completed")
 
 query_manager = KWayMarginalQMTorch(data, workloads, verbose=args.verbose, device=device)
-true_answers = query_manager.get_answers(data)
+true_answers = get_cached_true_answers(args, data, query_manager)
 
 T = get_T(args.T, workloads)
 delta = 1.0 / len(data) ** 2
@@ -35,11 +42,12 @@ algo = IterAlgoGEM(G, T, eps0,
 
 algo.fit(true_answers)
 
-# get answers using sampled rows (alternatively you can get answers using G.get_qm_answers())
-syndata = G.get_syndata(args.num_samples)
-syndata_answers = query_manager.get_answers(syndata)
+if args.num_samples == 0:
+    syndata_answers = G.get_qm_answers()
+else:
+    syndata = G.get_syndata(args.num_samples)
+    syndata_answers = query_manager.get_answers(syndata)
 errors = get_errors(true_answers, syndata_answers)
 print(errors)
 
-args.workload = len(workloads)
-save_results("gem.csv", './results', args, errors)
+save_results(results_fn, './results', args, errors)

@@ -123,15 +123,17 @@ class Domain:
         return self.__repr__()
 
 class Dataset:
-    def __init__(self, df, domain):
+    def __init__(self, df, domain, weights=None):
         """ create a Dataset object
 
         :param df: a pandas dataframe
         :param domain: a domain object
         """
         assert set(domain.attrs) <= set(df.columns), 'data must contain domain attributes'
+        assert weights is None or df.shape[0] == weights.size
         self.domain = domain
         self.df = df.loc[:, domain.attrs]
+        self.weights = weights
 
     def __len__(self):
         return len(self.df)
@@ -171,6 +173,10 @@ class Dataset:
     def drop(self, cols):
         proj = [c for c in self.domain if c not in cols]
         return self.project(proj)
+
+    @property
+    def records(self):
+        return self.df.shape[0]
 
     def datavector(self, flatten=True, weights=None, density=False):
         """ return the database in vector-of-counts form """

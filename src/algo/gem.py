@@ -69,7 +69,8 @@ class IterAlgoGEMBase(IterativeAlgorithmTorch):
         for step in range(self.max_iters):
             optimizer.zero_grad()
 
-            errors = self._get_sampled_query_errors().abs()
+            with torch.no_grad():
+                errors = self._get_sampled_query_errors().abs()
             idxs = torch.arange(len(errors))
 
             # above THRESHOLD
@@ -109,7 +110,8 @@ class IterAlgoGEMBase(IterativeAlgorithmTorch):
             # MEASURE
             self._measure(true_answers[max_query_idx])
 
-            errors = self._get_sampled_query_errors().abs()
+            with torch.no_grad():
+                errors = self._get_sampled_query_errors().abs()
             self.sampled_max_errors.append(errors.max().item())
             self._update_ema_error(self.sampled_max_errors[-1])
 

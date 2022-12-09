@@ -66,6 +66,21 @@ def get_data_onehot(data):
 
     return data_onehot.astype(bool)
 
+def get_cached_true_answers(args, data, query_manager):
+    answers_dir = 'save/true_answers'
+    if not os.path.exists(answers_dir):
+        os.makedirs(answers_dir)
+
+    fn ='{}_{}_{}_{}.pt'.format(args.dataset, args.workload, args.marginal, args.workload_seed)
+    answers_path = os.path.join(answers_dir, fn)
+    if os.path.exists(answers_path):
+        true_answers = torch.load(answers_path)
+    else:
+        true_answers = query_manager.get_answers(data)
+        torch.save(true_answers, answers_path)
+
+    return true_answers
+
 def get_errors(true_answers, fake_answers):
     if torch.is_tensor(true_answers):
         errors = (true_answers - fake_answers).abs()
@@ -105,3 +120,17 @@ def append_results(df_results, filename, directory, remove_existing=False):
 def save_results(filename, directory, args, errors):
     df_results = get_df_results(args, errors)
     append_results(df_results, filename, directory)
+
+def check_existing_results(results_fn, args):
+    results_path = os.path.join('./results', results_fn)
+    if not os.path.exists(results_path):
+        return False
+    df_results = pd.read_csv(results_path)
+    for key, val in vars(args).items():
+        if val is None:
+            mask = df_results[key].isna()
+        else:
+            mask = df_results[key] == val
+        df_results = df_results[mask]
+    assert len(df_results) <= 1, 'duplicate results'
+    return len(df_results) > 0
