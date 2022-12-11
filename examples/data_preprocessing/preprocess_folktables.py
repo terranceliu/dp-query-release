@@ -22,21 +22,26 @@ ALL_STATES = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI',
               'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT',
               'VT', 'VA', 'WA', 'WV', 'WI', 'WY', 'PR']
 
-ALL_CONT_ATTRS = ['AGEP', 'PINCP', 'WKHP', 'PWGTP', 'INSP', 'MHP', 'MRGP', 'RMSP', 'RNTP', 'SMP', 'VALP',
-                    'WATP', 'FINCP', 'GRNTP', 'GRPIP', 'HINCP', 'NOC', 'NPF', 'NRC', 'OCPIP', 'SMOCP', 'TAXAMT',
-                    'WGTP1', 'INTP', 'JWMNP', 'JWRIP', 'MARHYP', 'OIP', 'PAP', 'RETP', 'SEMP', 'SSIP', 'SSP',
-                    'WAGP', 'WKHP', 'YOEP', 'PERNP', 'PINCP', 'POVPIP']
+ALL_CONT_ATTRS = ['AGEP', 'FINCP', 'GRNTP', 'GRPIP', 'HINCP', 'INSP', 'INTP',
+                  'JWMNP', 'JWRIP', 'MARHYP', 'MHP', 'MRGP', 'NOC', 'NPF', 'NRC',
+                  'OCPIP', 'OIP', 'PAP', 'PERNP', 'PINCP', 'POVPIP', 'PWGTP', 'RETP',
+                  'RMSP', 'RNTP', 'SEMP', 'SMOCP', 'SMP', 'SSIP', 'SSP', 'TAXAMT',
+                  'VALP', 'WAGP', 'WATP', 'WGTP1', 'WKHP', 'YOEP']
 
 COLS_DEL = ['ST']
 COLS_STATE_SPECIFIC = ['PUMA', 'POWPUMA']
 
 NUM_BINS = 10
 
-def split_con_cat(all_attrs):
-    cat = set(all_attrs) - set(ALL_CONT_ATTRS)
-    con = set(all_attrs).intersection(ALL_CONT_ATTRS)
+def split_con_cat(all_attrs, target_attr=None):
+    cont_attr = ALL_CONT_ATTRS.copy()
+    if target_attr is not None and target_attr in cont_attr: # target attr is always binary
+        cont_attr.remove(target_attr)
+    cat = set(all_attrs) - set(cont_attr)
+    con = set(all_attrs).intersection(cont_attr)
     return list(cat), list(con)
 
+# When adding a new task, you must verify whether continuous attributes are included in ALL_CONT_ATTRS
 ACSTask = {
     'employment': ACSEmployment,
     'income': ACSIncome,
@@ -62,7 +67,7 @@ def get_acs_raw(task, state, year='2018', remove_raw_files=False, return_attrs=F
         shutil.rmtree(data_source._root_dir)
 
     if return_attrs:
-        attr_cat, attr_num = split_con_cat(all_attrs)
+        attr_cat, attr_num = split_con_cat(all_attrs, target_attr=target_attr)
         return df, (attr_cat, attr_num)
     return df
 
@@ -98,7 +103,7 @@ def get_preprocessor_mappings(task, num_bins=NUM_BINS):
 
     return dict_cat, dict_num
 
-def preprocess_acs(task, state):
+def preprocess_acs(task, state, mixed=False):
     df = get_acs_raw(task, state)
 
     mappings_dir = os.path.join(RAW_DATA_DIR, str(YEAR), HORIZON, 'preprocessor_mappings')
@@ -147,6 +152,12 @@ def preprocess_acs(task, state):
         assert (df_preprocessed[key].unique() < domain[key]).all(), \
             '{}, {}, {}, {}'.format(key, df_preprocessed[key].unique(), domain[key], val)
 
+    # attribute that take on 1 value are not needed
+    for key, val in domain.items():
+        if val == 1:
+            del df_preprocessed[key]
+    domain = {k: v for (k, v) in domain.items() if k in df_preprocessed.columns}
+
     csv_path = './datasets/folktables_{}_{}_{}.csv'.format(task, YEAR, state)
     df_preprocessed.to_csv(csv_path, index=False)
 
@@ -154,24 +165,46 @@ def preprocess_acs(task, state):
     with open(json_path, 'w') as f:
         json.dump(domain, f)
 
-    # categorical-only
-    csv_path_cat = './datasets/folktables-cat_{}_{}_{}.csv'.format(task, YEAR, state)
-    os.symlink(os.path.realpath(csv_path), csv_path_cat)
+    if mixed:
+        for attr in config['attr_num']:
+            df_preprocessed[attr] = df[attr].values
+            domain[attr] = 1
 
-    for attr in config['attr_num']:
-        del domain[attr]
-    json_path_cat = './datasets/domain/folktables-cat_{}_{}_{}-domain.json'.format(task, YEAR, state)
-    with open(json_path_cat, 'w') as f:
-        json.dump(domain, f)
+        # mixed
+        csv_path_mixed = './datasets/folktables_{}_{}_{}-mixed.csv'.format(task, YEAR, state)
+        df_preprocessed.to_csv(csv_path_mixed, index=False)
+
+        json_path = './datasets/domain/folktables_{}_{}_{}-domain-mixed.json'.format(task, YEAR, state)
+        with open(json_path, 'w') as f:
+            json.dump(domain, f)
+
+        # categorical-only
+        csv_path_cat = './datasets/folktables_{}_{}_{}-cat.csv'.format(task, YEAR, state)
+        os.symlink(os.path.realpath(csv_path_mixed), csv_path_cat)
+
+        domain_cat = {k: v for (k, v) in domain.items() if k in config['attr_cat']}
+        json_path_cat = './datasets/domain/folktables_{}_{}_{}-domain-cat.json'.format(task, YEAR, state)
+        with open(json_path_cat, 'w') as f:
+            json.dump(domain_cat, f)
+
+        # numerical-only
+        csv_path_num = './datasets/folktables_{}_{}_{}-num.csv'.format(task, YEAR, state)
+        os.symlink(os.path.realpath(csv_path_mixed), csv_path_num)
+
+        domain_num = {k: v for (k, v) in domain.items() if k in config['attr_num']}
+        json_path_num = './datasets/domain/folktables_{}_{}_{}-domain-num.json'.format(task, YEAR, state)
+        with open(json_path_num, 'w') as f:
+            json.dump(domain_num, f)
 
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--tasks', nargs='+')
     parser.add_argument('--states', nargs='+')
+    parser.add_argument('--mixed', action='store_true')
     return parser.parse_args()
 
 """
-python examples/data_preprocessing/preprocess_folktables.py \
+python examples/data_preprocessing/preprocess_folktables.py --mixed \
 --tasks income travel coverage mobility employment \
 --states CA TX FL NY PA
 """
@@ -184,6 +217,6 @@ if __name__ == '__main__':
 
     for task, state in itertools.product(acs_config_data['tasks'], acs_config_data['states']):
         print(task, state)
-        preprocess_acs(task, state)
+        preprocess_acs(task, state, mixed=args.mixed)
 
     shutil.rmtree(RAW_DATA_DIR)
