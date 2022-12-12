@@ -13,6 +13,7 @@ Query manager syndata class
 """
 class QueryManager(ABC):
     def __init__(self, data, workloads, sensitivity=None, verbose=False):
+        self.N = len(data)
         self.domain = data.domain
         self.workloads = sorted([tuple(sorted(x)) for x in workloads])
         self.sensitivity = sensitivity
@@ -101,7 +102,7 @@ class BaseKWayMarginalQM(QueryManager):
     def __init__(self, data, workloads, sensitivity=None, verbose=False):
         super().__init__(data, workloads, sensitivity=sensitivity, verbose=verbose)
         if sensitivity is None:
-            self.sensitivity = 1 / len(data)
+            self.sensitivity = 1 / self.N
 
     def _setup_queries(self):
         max_marginal = np.array([len(x) for x in self.workloads]).max()

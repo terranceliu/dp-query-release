@@ -6,11 +6,13 @@ from src.utils import get_args, get_data, get_rand_workloads, get_cached_true_an
 from src.utils import get_per_round_budget_zCDP
 from src.syndata import NeuralNetworkGenerator
 from src.algo import IterAlgoGEM
+# from src.algo import IterAlgoGEML1 as IterAlgoGEM
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 args = get_args(base='nn', iterative='gem')
 results_fn = 'gem.csv'
+# results_fn = 'gem_l1.csv'
 
 data = get_data(args.dataset)
 

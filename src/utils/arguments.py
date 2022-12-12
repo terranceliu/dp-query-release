@@ -58,7 +58,7 @@ def get_args(base, iterative, public=False):
 
     args = parser.parse_args()
 
-    if args.T.is_integer():
+    if args.T.is_integer() and args.T != 1:
         args.T = int(args.T)
 
     print(args)
@@ -68,4 +68,5 @@ def get_T(T, workloads):
     if isinstance(T, float):
         T = int(len(workloads) * T)
     assert T <= len(workloads), "Number of iterations T must be <= total # workloads"
+    assert T > 0, "T must be greater than 0"
     return T
