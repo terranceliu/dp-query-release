@@ -158,10 +158,10 @@ def preprocess_acs(task, state, mixed=False):
             del df_preprocessed[key]
     domain = {k: v for (k, v) in domain.items() if k in df_preprocessed.columns}
 
-    csv_path = './datasets/folktables_{}_{}_{}.csv'.format(task, YEAR, state)
+    csv_path = './datasets/folktables_{}_{}_{}.csv'.format(YEAR, task, state)
     df_preprocessed.to_csv(csv_path, index=False)
 
-    json_path = './datasets/domain/folktables_{}_{}_{}-domain.json'.format(task, YEAR, state)
+    json_path = './datasets/domain/folktables_{}_{}_{}-domain.json'.format(YEAR, task, state)
     with open(json_path, 'w') as f:
         json.dump(domain, f)
 
@@ -171,28 +171,28 @@ def preprocess_acs(task, state, mixed=False):
             domain[attr] = 1
 
         # mixed
-        csv_path_mixed = './datasets/folktables_{}_{}_{}-mixed.csv'.format(task, YEAR, state)
+        csv_path_mixed = './datasets/folktables_{}_{}_{}-mixed.csv'.format(YEAR, task, state)
         df_preprocessed.to_csv(csv_path_mixed, index=False)
 
-        json_path = './datasets/domain/folktables_{}_{}_{}-mixed-domain.json'.format(task, YEAR, state)
+        json_path = './datasets/domain/folktables_{}_{}_{}-mixed-domain.json'.format(YEAR, task, state)
         with open(json_path, 'w') as f:
             json.dump(domain, f)
 
         # categorical-only
-        csv_path_cat = './datasets/folktables_{}_{}_{}-cat.csv'.format(task, YEAR, state)
+        csv_path_cat = './datasets/folktables_{}_{}_{}-cat.csv'.format(YEAR, task, state)
         os.symlink(os.path.realpath(csv_path_mixed), csv_path_cat)
 
         domain_cat = {k: v for (k, v) in domain.items() if k in config['attr_cat']}
-        json_path_cat = './datasets/domain/folktables_{}_{}_{}-cat-domain.json'.format(task, YEAR, state)
+        json_path_cat = './datasets/domain/folktables_{}_{}_{}-cat-domain.json'.format(YEAR, task, state)
         with open(json_path_cat, 'w') as f:
             json.dump(domain_cat, f)
 
         # numerical-only
-        csv_path_num = './datasets/folktables_{}_{}_{}-num.csv'.format(task, YEAR, state)
+        csv_path_num = './datasets/folktables_{}_{}_{}-num.csv'.format(YEAR, task, state)
         os.symlink(os.path.realpath(csv_path_mixed), csv_path_num)
 
         domain_num = {k: v for (k, v) in domain.items() if k in config['attr_num']}
-        json_path_num = './datasets/domain/folktables_{}_{}_{}-num-domain.json'.format(task, YEAR, state)
+        json_path_num = './datasets/domain/folktables_{}_{}_{}-num-domain.json'.format(YEAR, task, state)
         with open(json_path_num, 'w') as f:
             json.dump(domain_num, f)
 
