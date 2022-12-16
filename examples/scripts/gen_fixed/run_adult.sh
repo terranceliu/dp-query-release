@@ -17,7 +17,7 @@ LR=1e-1
 MAX_IDXS=10000
 MAX_ITERS=1000
 
-python examples/run/run_rap_softmax.py --dataset $DATASET \
+python examples/run/run_rap.py --dataset $DATASET \
 --marginal $MARGINAL --workload $WORKLOAD --workload_seed $WORKLOAD_SEED \
 --epsilon $EPSILON --alpha $ALPHA --T $T \
 --K $K --samples_per_round $SAMPLES_PER_ROUND \

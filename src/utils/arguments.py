@@ -39,7 +39,7 @@ def get_args(base, iterative, public=False):
     if iterative == 'gem':
         parser.add_argument('--ema_weights', action='store_true')
         parser.add_argument('--ema_weights_beta', type=float, default=0.9)
-    elif iterative == 'rap_softmax':
+    elif iterative == 'rap':
         parser.add_argument('--samples_per_round', type=int, default=1)
     elif iterative == 'non_dp':
         parser.add_argument('--sample_by_error', action='store_true')

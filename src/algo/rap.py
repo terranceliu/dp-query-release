@@ -8,7 +8,7 @@ from src.qm import KWayMarginalQM
 from src.algo.base import IterativeAlgorithmTorch
 from src.utils.mechanisms import exponential_mech, gaussian_mech
 
-class IterAlgoRAPSoftmaxBase(IterativeAlgorithmTorch):
+class IterAlgoRAPBase(IterativeAlgorithmTorch):
     def __init__(self, G, T, eps0,
                  alpha=0.5, default_dir=None, verbose=False, seed=None,
                  samples_per_round=1, lr=1e-4, max_iters=1000, max_idxs=10000):
@@ -51,7 +51,6 @@ class IterAlgoRAPSoftmaxBase(IterativeAlgorithmTorch):
             scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, patience=self.max_iters,
                                                              threshold=1e-7, threshold_mode='rel')
 
-            step = 0
             for step in range(self.max_iters):
                 self.optimizer.zero_grad()
 
@@ -71,7 +70,7 @@ class IterAlgoRAPSoftmaxBase(IterativeAlgorithmTorch):
             scores = (true_answers - syn_answers).abs()
             self.record_errors(true_answers, syn_answers)
 
-class IterAlgoRAPSoftmax(IterAlgoRAPSoftmaxBase):
+class IterAlgoRAP(IterAlgoRAPBase):
     def _sample(self, scores):
         scores[self.past_query_idxs] = -np.infty
         scores = list(scores[x[0]:x[1]] for x in list(self.qm.workload_idxs))
@@ -88,7 +87,7 @@ class IterAlgoRAPSoftmax(IterAlgoRAPSoftmaxBase):
         noisy_answers = torch.clip(noisy_answers, 0, 1)
         self.past_measurements = torch.cat([self.past_measurements, noisy_answers])
 
-class IterAlgoSingleRAPSoftmax(IterAlgoRAPSoftmaxBase):
+class IterAlgoSingleRAP(IterAlgoRAPBase):
     def _sample(self, scores):
         scores[self.past_query_idxs] = -np.infty
         max_query_idx = exponential_mech(scores, self.alpha * self.eps0, self.qm.sensitivity)
