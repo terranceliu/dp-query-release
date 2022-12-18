@@ -43,21 +43,20 @@ test_csv_path = os.path.join(args.root, args.dataset + '-test.csv')
 df_train.to_csv(train_csv_path, index=False)
 df_test.to_csv(test_csv_path, index=False)
 
-domain_path = os.path.join(args.root, args.dataset + '-domain.json')
-train_domain_path = os.path.join(args.root, args.dataset + '-train-domain.json')
-test_domain_path = os.path.join(args.root, args.dataset + '-test-domain.json')
-os.symlink(domain_path, train_domain_path)
-os.symlink(domain_path, test_domain_path)
+domain_path = os.path.join(args.root, 'domain/', args.dataset + '-domain.json')
+train_domain_path = os.path.join(args.root, 'domain/', args.dataset + '-train-domain.json')
+test_domain_path = os.path.join(args.root, 'domain/', args.dataset + '-test-domain.json')
+os.symlink(os.path.realpath(domain_path), train_domain_path)
+os.symlink(os.path.realpath(domain_path), test_domain_path)
 
 if args.mixed:
-    csv_path = os.path.join(args.root, args.dataset + '.csv')
     for suffix in ['-cat', '-num']:
-        os.symlink(csv_path, train_csv_path.replace('-mixed', suffix))
-        os.symlink(csv_path, test_csv_path.replace('-mixed', suffix))
+        os.symlink(os.path.realpath(train_csv_path), train_csv_path.replace('-mixed', suffix))
+        os.symlink(os.path.realpath(test_csv_path), test_csv_path.replace('-mixed', suffix))
 
-        domain_path = os.path.join(args.root, args.dataset.replace('-mixed', suffix) + '-domain.json')
-        os.symlink(domain_path, train_domain_path.replace('-mixed', suffix))
-        os.symlink(domain_path, test_domain_path.replace('-mixed', suffix))
+        domain_path = os.path.join(args.root, 'domain/', args.dataset.replace('-mixed', suffix) + '-domain.json')
+        os.symlink(os.path.realpath(domain_path), train_domain_path.replace('-mixed', suffix))
+        os.symlink(os.path.realpath(domain_path), test_domain_path.replace('-mixed', suffix))
 
 
 

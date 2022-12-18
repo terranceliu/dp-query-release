@@ -179,20 +179,3 @@ class IterAlgoSingleGEM(IterAlgoGEMBase):
         noisy_answer = gaussian_mech(answers, (1 - self.alpha) * self.eps0, self.qm.sensitivity)
         noisy_answer = torch.clip(noisy_answer, 0, 1)
         self.past_measurements = torch.cat([self.past_measurements, torch.tensor([noisy_answer], device=self.device)])
-#
-class IterAlgoGEML1(IterAlgoGEM):
-    def _sample(self, scores):
-        scores[self.past_query_idxs] = -np.infty
-        scores = list(scores[x[0]:x[1]] for x in list(self.qm.workload_idxs))
-
-        scores_l1 = np.array([x.sum().item() for x in scores])
-        bias = np.array([len(x) for x in scores]) / self.qm.N
-        scores = scores_l1 - bias
-
-        max_workload_idx = exponential_mech(scores, self.alpha * self.eps0, self.qm.sensitivity)
-        max_query_idxs = torch.arange(*self.qm.workload_idxs[max_workload_idx], device=self.device)
-
-        self.past_workload_idxs = torch.cat([self.past_workload_idxs, torch.tensor([max_workload_idx], device=self.device)])
-        self.past_query_idxs = torch.cat([self.past_query_idxs, max_query_idxs])
-
-        return max_query_idxs

@@ -36,7 +36,9 @@ def get_args(base, iterative, public=False):
     else:
         assert False, 'invalid syndata generator selection'
 
-    if iterative == 'gem':
+    if iterative == 'iter':
+        pass
+    elif iterative == 'gem':
         parser.add_argument('--ema_weights', action='store_true')
         parser.add_argument('--ema_weights_beta', type=float, default=0.9)
     elif iterative == 'rap':

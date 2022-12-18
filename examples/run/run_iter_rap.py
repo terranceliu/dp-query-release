@@ -4,13 +4,13 @@ from src.qm import KWayMarginalQMTorch
 from src.utils import get_args, get_data, get_rand_workloads, get_cached_true_answers, get_T, \
     get_errors, save_results, check_existing_results
 from src.utils import get_per_round_budget_zCDP
-from src.syndata import NeuralNetworkGenerator
-from src.algo import IterAlgoGEM
+from src.syndata import FixedGenerator
+from src.algo import IterAlgo
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-args = get_args(base='nn', iterative='gem')
-results_fn = 'gem.csv'
+args = get_args(base='fixed', iterative='iter')
+results_fn = 'rap.csv'
 
 data = get_data(args.dataset)
 
@@ -27,18 +27,16 @@ T = get_T(args.T, workloads)
 delta = 1.0 / len(data) ** 2
 eps0, rho = get_per_round_budget_zCDP(args.epsilon, delta, T, alpha=args.alpha)
 
-model_save_dir = './save/GEM/{}/{}_{}_{}/{}_{}_{}_{}_{}/'.format(args.dataset,
-                                                                 args.marginal, args.workload, args.workload_seed,
-                                                                 args.epsilon, args.T, args.alpha,
-                                                                 args.K, args.resample)
+model_save_dir = './save/RAP/{}/{}_{}_{}/{}_{}_{}_{}/'.format(args.dataset,
+                                                                 args.marginal, args.workload,
+                                                                 args.workload_seed,
+                                                                 args.epsilon, args.T, args.alpha, args.K)
 
-G = NeuralNetworkGenerator(query_manager, K=args.K, device=device, init_seed=args.test_seed,
-                           embedding_dim=args.dim, gen_dims=[args.gen_dim] * 2, resample=args.resample)
-algo = IterAlgoGEM(G, T, eps0,
-                   alpha=args.alpha, default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
-                   loss_p=args.loss_p, lr=args.lr, eta_min=args.eta_min,
-                   max_idxs=args.max_idxs, max_iters=args.max_iters,
-                   ema_weights=args.ema_weights, ema_weights_beta=args.ema_weights_beta)
+G = FixedGenerator(query_manager, K=args.K, device=device, init_seed=args.test_seed)
+algo = IterAlgo(G, T, eps0,
+                alpha=args.alpha, default_dir=model_save_dir, verbose=args.verbose, seed=args.test_seed,
+                loss_p=args.loss_p, lr=args.lr, max_iters=args.max_iters, max_idxs=args.max_idxs,
+                )
 
 algo.fit(true_answers)
 
